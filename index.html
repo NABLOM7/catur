@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Catur dengan Stockfish Bot</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; background: #f0f0f0; }
+        #nameInput, #menu, #game, #result { margin-top: 20px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #board { margin: 20px auto; width: 320px; height: 320px; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+
+<h1>Game Catur dengan Stockfish Bot</h1>
+
+<div id="nameInput">
+    <label for="playerName">Masukkan Nama:</label>
+    <input type="text" id="playerName" placeholder="Nama Anda" />
+    <button onclick="startMenu()">Mulai</button>
+</div>
+
+<div id="menu" style="display:none;">
+    <button onclick="startGame('bot')">Lawan Bot</button>
+    <button onclick="startGame('pvp')">P1 vs P2</button>
+</div>
+
+<div id="game" style="display:none;">
+    <div id="board"></div>
+    <p id="status"></p>
+    <button onclick="restart()">Mulai Ulang</button>
+</div>
+
+<div id="result" style="display:none;">
+    <p id="resultMessage"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.2/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0-beta.0/chessboard-1.0.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0-beta.0/chessboard-1.0.0.min.css" />
+
+<script>
+    let playerName = '';
+    let gameMode = '';
+    let game = new Chess();
+    let board = null;
+    let startTime = null;
+    const webhookURL = 'YOUR_DISCORD_WEBHOOK_URL'; // Ganti dengan URL webhook Discord Anda
+
+    function startMenu() {
+        playerName = document.getElementById('playerName').value.trim();
+        if (!playerName) {
+            alert('Tolong masukkan nama Anda');
+            return;
+        }
+        document.getElementById('nameInput').style.display = 'none';
+        document.getElementById('menu').style.display = 'block';
+    }
+
+    function startGame(mode) {
+        gameMode = mode;
+        game.reset();
+        startTime = new Date();
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        document.getElementById('result').style.display = 'none';
+        initBoard();
+        updateStatus();
+    }
+
+    function initBoard() {
+        if(board) {
+            board.destroy();
+        }
+        board = Chessboard('board', {
+            draggable: true,
+            position: 'start',
+            onDrop: onDrop
+        });
+    }
+
+    function onDrop(source, target) {
+        let move = game.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+
+        updateStatus();
+
+        if (gameMode === 'bot' &&
+            !game.game_over() &&
+            !game.in_checkmate()) {
+            window.setTimeout(makeBotMove, 250);
+        } else if (game.game_over()) {
+            endGame();
+        }
+    }
+
+    function makeBotMove() {
+        // Sebagai pengganti Stockfish yang harus dijalankan server-side,
+        // kita gunakan langkah acak bot demo
+        let possibleMoves = game.moves();
+        if (possibleMoves.length === 0) return;
+        let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        game.move(move);
+        board.position(game.fen());
+        updateStatus();
+        if (game.game_over()) {
+            endGame();
+        }
+    }
+
+    function updateStatus() {
+        let status = '';
+        if (game.in_checkmate()) {
+            status = 'Checkmate! ' + (game.turn() === 'w' ? 'Hitam menang' : 'Putih menang');
+        } else if (game.in_stalemate()) {
+            status = 'Stalemate! Seri';
+        } else {
+            status = (game.turn() === 'w' ? 'Giliran Putih' : 'Giliran Hitam') + (game.in_check() ? ', cek!' : '');
+        }
+        document.getElementById('status').innerText = status;
+    }
+
+    function endGame() {
+        const endTime = new Date();
+        const playTime = ((endTime - startTime) / 1000).toFixed(2);
+        let resultText = '';
+        if (game.in_checkmate()) {
+            let winner = game.turn() === 'w' ? 'Hitam' : 'Putih';
+            resultText = `Game selesai, pemenang: ${winner}. Waktu bermain: ${playTime} detik.`;
+
+            // Jika lawan bot dan pemain (putih) menang, kirim webhook ke Discord
+            if (gameMode === 'bot' && winner === 'Putih') {
+                sendDiscordWebhook(playerName, playTime);
+            }
+        } else if (game.in_stalemate()) {
+            resultText = `Game selesai seri. Waktu bermain: ${playTime} detik.`;
+        } else {
+            resultText = `Game selesai. Waktu bermain: ${playTime} detik.`;
+        }
+
+        document.getElementById('resultMessage').innerText = resultText;
+        document.getElementById('result').style.display = 'block';
+    }
+
+    function sendDiscordWebhook(name, time) {
+        fetch(webhookURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: `${name} mengalahkan bot Stockfish dalam waktu ${time} detik!`
+            })
+        }).catch(console.error);
+    }
+
+    function restart() {
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('menu').style.display = 'block';
+        game.reset();
+        if(board) board.position('start');
+        updateStatus();
+    }
+</script>
+
+</body>
+</html>
