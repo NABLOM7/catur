@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Catur Web dengan Bidak Custom</title>
+  <title>Game Catur Web Custom Bidak</title>
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; padding: 18px;}
@@ -22,19 +22,150 @@
   </style>
 </head>
 <body>
-  <h2>Game Catur Online dengan Bidak Custom</h2>
+  <h2>catur web</h2>
 
   <div id="welcome">
-    <img src="quality_restoration_20251008112907799.jpg" alt="Papan Catur" class="ornamen" />
-    <img src="quality_restoration_20251008113117094.jpg" alt="Bidak Catur" class="ornamen" />
-    <p>Selamat datang! Masukkan nama dan pilih mode bermain.</p>
+
+    <p>selamat datang(bingung mau masukin apa lagi)</p>
   </div>
 
   <div id="nameInput">
     <input type="text" id="playerName" placeholder="Masukkan Nama Anda" />
-    <button id="startBtn">Mulai</button>
+    <button id="startBtn">gass</button>
   </div>
 
+  <div id="menu" class="hidden">
+    <button id="vsBot">bot easy</button>
+    <button id="vsP2">P1 vs P2</button>
+  </div>
+
+  <div id="game" class="hidden">
+    <div id="board" style="width: 320px;"></div>
+    <div id="status"></div>
+    <button id="restartBtn">ulang</button>
+  </div>
+
+  <div id="result" class="hidden">
+    <p id="resultText"></p>
+  </div>
+
+  <div id="footer">&copy; catur simple by NABLOM</div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+
+  <script>
+    const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7"; 
+    let game = new Chess();
+    let board = null;
+    let playerName = "";
+    let gameMode = "";
+    let startTime = null;
+
+    $("#startBtn").click(() => {
+      playerName = $("#playerName").val().trim();
+      if (!playerName) {
+        alert("nama mu masukin dulu kocak");
+        return;
+      }
+      $("#nameInput").hide();
+      $("#menu").show();
+    });
+
+    $("#vsBot").click(() => startGame("bot"));
+    $("#vsP2").click(() => startGame("pvp"));
+
+    $("#restartBtn").click(() => {
+      $("#game").hide();
+      $("#result").hide();
+      $("#menu").show();
+      game.reset();
+      board.position("start");
+    });
+
+    function startGame(mode) {
+      gameMode = mode;
+      game.reset();
+      startTime = new Date();
+      $("#menu").hide();
+      $("#result").hide();
+      $("#game").show();
+
+      if (board) board.destroy();
+      board = Chessboard("board", {
+        draggable: true,
+        position: "start",
+        pieceTheme: "img/{piece}.png",
+        onDrop: onDrop,
+      });
+      updateStatus();
+    }
+
+    function onDrop(source, target) {
+      let move = game.move({ from: source, to: target, promotion: "q" });
+      if (move === null) return "snapback";
+      updateStatus();
+
+      if (gameMode === "bot" && !game.game_over()) {
+        setTimeout(botMove, 400);
+      }
+      if (game.game_over()) {
+        endGame();
+      }
+    }
+
+    function botMove() {
+      let moves = game.moves();
+      if (moves.length === 0) return;
+      let move = moves[Math.floor(Math.random() * moves.length)];
+      game.move(move);
+      board.position(game.fen());
+      updateStatus();
+      if (game.game_over()) {
+        endGame();
+      }
+    }
+
+    function updateStatus() {
+      let status = "";
+      if (game.in_checkmate()) {
+        status = "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
+      } else if (game.in_draw()) {
+        status = "Seri.";
+      } else {
+        status = (game.turn() === "w" ? "Putih" : "Hitam") + " giliran jalan";
+      }
+      $("#status").text(status);
+    }
+
+    function endGame() {
+      const endTime = new Date();
+      const duration = ((endTime - startTime) / 1000).toFixed(2);
+      let message = "";
+
+      if (game.in_checkmate()) {
+        const winner = game.turn() === "w" ? "Hitam" : "Putih";
+        message = `game selesai, pemenang: ${winner}. Nama: ${playerName}, durasi: ${duration} detik.`;
+        if (gameMode === "bot" && winner === "Putih" && webhookURL) {
+          fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `${playerName} mengalahkan bot dalam waktu ${duration} detik!`,
+            }),
+          });
+        }
+      } else {
+        message = `game selesai seri. Nama: ${playerName}, durasi: ${duration} detik.`;
+      }
+
+      $("#resultText").text(message);
+      $("#result").show();
+    }
+  </script>
+</body>
+</html>
   <div id="menu" class="hidden">
     <button id="vsBot">Lawan Bot</button>
     <button id="vsP2">P1 vs P2</button>
@@ -167,3 +298,4 @@
   </script>
 </body>
 </html>
+
