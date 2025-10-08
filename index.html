@@ -1,167 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Game Catur dengan Stockfish Bot</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 0; background: #f0f0f0; }
-        #nameInput, #menu, #game, #result { margin-top: 20px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
-        #board { margin: 20px auto; width: 320px; height: 320px; border: 2px solid #333; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Game Catur Web dengan Bidak Custom</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; padding: 18px;}
+    h2 { margin-bottom: 12px; }
+    #welcome { margin-bottom: 15px;}
+    img.ornamen { width: 180px; margin: 6px; border: 1px solid #bbb; border-radius: 5px; }
+    #nameInput, #menu, #game, #result { margin-top: 15px; }
+    #board { margin: 12px auto; }
+    button, input { font-size: 16px; padding: 8px 14px; border-radius: 5px; border: 1px solid #888; }
+    button { cursor: pointer; background-color: #eaeaea; }
+    button:hover { background-color: #cfcfcf; }
+    input { width: 200px; }
+    .hidden { display: none; }
+    #status { margin-top: 12px; font-weight: bold; }
+    #footer { margin-top: 40px; font-size: 12px; color: #777; }
+  </style>
 </head>
 <body>
+  <h2>Game Catur Online dengan Bidak Custom</h2>
 
-<h1>Game Catur dengan Stockfish Bot</h1>
+  <div id="welcome">
+    <img src="quality_restoration_20251008112907799.jpg" alt="Papan Catur" class="ornamen" />
+    <img src="quality_restoration_20251008113117094.jpg" alt="Bidak Catur" class="ornamen" />
+    <p>Selamat datang! Masukkan nama dan pilih mode bermain.</p>
+  </div>
 
-<div id="nameInput">
-    <label for="playerName">Masukkan Nama:</label>
-    <input type="text" id="playerName" placeholder="Nama Anda" />
-    <button onclick="startMenu()">Mulai</button>
-</div>
+  <div id="nameInput">
+    <input type="text" id="playerName" placeholder="Masukkan Nama Anda" />
+    <button id="startBtn">Mulai</button>
+  </div>
 
-<div id="menu" style="display:none;">
-    <button onclick="startGame('bot')">Lawan Bot</button>
-    <button onclick="startGame('pvp')">P1 vs P2</button>
-</div>
+  <div id="menu" class="hidden">
+    <button id="vsBot">Lawan Bot</button>
+    <button id="vsP2">P1 vs P2</button>
+  </div>
 
-<div id="game" style="display:none;">
-    <div id="board"></div>
-    <p id="status"></p>
-    <button onclick="restart()">Mulai Ulang</button>
-</div>
+  <div id="game" class="hidden">
+    <div id="board" style="width: 320px;"></div>
+    <div id="status"></div>
+    <button id="restartBtn">Restart</button>
+  </div>
 
-<div id="result" style="display:none;">
-    <p id="resultMessage"></p>
-</div>
+  <div id="result" class="hidden">
+    <p id="resultText"></p>
+  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.2/chess.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0-beta.0/chessboard-1.0.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0-beta.0/chessboard-1.0.0.min.css" />
+  <div id="footer">&copy; 2025 Game Catur Web | Powered by chessboard.js & chess.js</div>
 
-<script>
-    let playerName = '';
-    let gameMode = '';
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+
+  <script>
+    const webhookURL = ""; // Isi jika ingin webhook Discord aktif
     let game = new Chess();
     let board = null;
+    let playerName = "";
+    let gameMode = "";
     let startTime = null;
-    const webhookURL = 'YOUR_DISCORD_WEBHOOK_URL'; // Ganti dengan URL webhook Discord Anda
 
-    function startMenu() {
-        playerName = document.getElementById('playerName').value.trim();
-        if (!playerName) {
-            alert('Tolong masukkan nama Anda');
-            return;
-        }
-        document.getElementById('nameInput').style.display = 'none';
-        document.getElementById('menu').style.display = 'block';
-    }
+    $("#startBtn").click(() => {
+      playerName = $("#playerName").val().trim();
+      if (!playerName) {
+        alert("Masukkan nama Anda dulu!");
+        return;
+      }
+      $("#nameInput").hide();
+      $("#menu").show();
+    });
+
+    $("#vsBot").click(() => startGame("bot"));
+    $("#vsP2").click(() => startGame("pvp"));
+
+    $("#restartBtn").click(() => {
+      $("#game").hide();
+      $("#result").hide();
+      $("#menu").show();
+      game.reset();
+      board.position("start");
+    });
 
     function startGame(mode) {
-        gameMode = mode;
-        game.reset();
-        startTime = new Date();
-        document.getElementById('menu').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
-        document.getElementById('result').style.display = 'none';
-        initBoard();
-        updateStatus();
-    }
+      gameMode = mode;
+      game.reset();
+      startTime = new Date();
+      $("#menu").hide();
+      $("#result").hide();
+      $("#game").show();
 
-    function initBoard() {
-        if(board) {
-            board.destroy();
-        }
-        board = Chessboard('board', {
-            draggable: true,
-            position: 'start',
-            onDrop: onDrop
-        });
+      if (board) board.destroy();
+      board = Chessboard("board", {
+        draggable: true,
+        position: "start",
+        pieceTheme: "img/{piece}.png", // gunakan gambar bidak custom di folder img/
+        onDrop: onDrop,
+      });
+      updateStatus();
     }
 
     function onDrop(source, target) {
-        let move = game.move({ from: source, to: target, promotion: 'q' });
-        if (move === null) return 'snapback';
+      let move = game.move({ from: source, to: target, promotion: "q" });
+      if (move === null) return "snapback";
+      updateStatus();
 
-        updateStatus();
-
-        if (gameMode === 'bot' &&
-            !game.game_over() &&
-            !game.in_checkmate()) {
-            window.setTimeout(makeBotMove, 250);
-        } else if (game.game_over()) {
-            endGame();
-        }
+      if (gameMode === "bot" && !game.game_over()) {
+        setTimeout(botMove, 400);
+      }
+      if (game.game_over()) {
+        endGame();
+      }
     }
 
-    function makeBotMove() {
-        // Sebagai pengganti Stockfish yang harus dijalankan server-side,
-        // kita gunakan langkah acak bot demo
-        let possibleMoves = game.moves();
-        if (possibleMoves.length === 0) return;
-        let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        game.move(move);
-        board.position(game.fen());
-        updateStatus();
-        if (game.game_over()) {
-            endGame();
-        }
+    function botMove() {
+      let moves = game.moves();
+      if (moves.length === 0) return;
+      let move = moves[Math.floor(Math.random() * moves.length)];
+      game.move(move);
+      board.position(game.fen());
+      updateStatus();
+      if (game.game_over()) {
+        endGame();
+      }
     }
 
     function updateStatus() {
-        let status = '';
-        if (game.in_checkmate()) {
-            status = 'Checkmate! ' + (game.turn() === 'w' ? 'Hitam menang' : 'Putih menang');
-        } else if (game.in_stalemate()) {
-            status = 'Stalemate! Seri';
-        } else {
-            status = (game.turn() === 'w' ? 'Giliran Putih' : 'Giliran Hitam') + (game.in_check() ? ', cek!' : '');
-        }
-        document.getElementById('status').innerText = status;
+      let status = "";
+      if (game.in_checkmate()) {
+        status = "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
+      } else if (game.in_draw()) {
+        status = "Seri.";
+      } else {
+        status = (game.turn() === "w" ? "Putih" : "Hitam") + " giliran jalan";
+      }
+      $("#status").text(status);
     }
 
     function endGame() {
-        const endTime = new Date();
-        const playTime = ((endTime - startTime) / 1000).toFixed(2);
-        let resultText = '';
-        if (game.in_checkmate()) {
-            let winner = game.turn() === 'w' ? 'Hitam' : 'Putih';
-            resultText = `Game selesai, pemenang: ${winner}. Waktu bermain: ${playTime} detik.`;
+      const endTime = new Date();
+      const duration = ((endTime - startTime) / 1000).toFixed(2);
+      let message = "";
 
-            // Jika lawan bot dan pemain (putih) menang, kirim webhook ke Discord
-            if (gameMode === 'bot' && winner === 'Putih') {
-                sendDiscordWebhook(playerName, playTime);
-            }
-        } else if (game.in_stalemate()) {
-            resultText = `Game selesai seri. Waktu bermain: ${playTime} detik.`;
-        } else {
-            resultText = `Game selesai. Waktu bermain: ${playTime} detik.`;
-        }
-
-        document.getElementById('resultMessage').innerText = resultText;
-        document.getElementById('result').style.display = 'block';
-    }
-
-    function sendDiscordWebhook(name, time) {
-        fetch(webhookURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+      if (game.in_checkmate()) {
+        const winner = game.turn() === "w" ? "Hitam" : "Putih";
+        message = `Game selesai, pemenang: ${winner}. Nama: ${playerName}, durasi: ${duration} detik.`;
+        if (gameMode === "bot" && winner === "Putih" && webhookURL) {
+          fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                content: `${name} mengalahkan bot Stockfish dalam waktu ${time} detik!`
-            })
-        }).catch(console.error);
-    }
+              content: `${playerName} mengalahkan bot dalam waktu ${duration} detik!`,
+            }),
+          });
+        }
+      } else {
+        message = `Game selesai seri. Nama: ${playerName}, durasi: ${duration} detik.`;
+      }
 
-    function restart() {
-        document.getElementById('game').style.display = 'none';
-        document.getElementById('result').style.display = 'none';
-        document.getElementById('menu').style.display = 'block';
-        game.reset();
-        if(board) board.position('start');
-        updateStatus();
+      $("#resultText").text(message);
+      $("#result").show();
     }
-</script>
-
+  </script>
 </body>
 </html>
