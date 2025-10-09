@@ -1,168 +1,422 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Catur Web Custom Bidak</title>
-  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
+  <meta charset="UTF-8">
+  <title>Catur Mode NABLOM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Musik background -->
+  <audio src="music.mp3" id="bgmusic" autoplay loop></audio>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; padding: 18px;}
-    h2 { margin-bottom: 12px; }
-    #welcome { margin-bottom: 15px;}
-    img.ornamen { width: 180px; margin: 6px; border: 1px solid #bbb; border-radius: 5px; }
-    #nameInput, #menu, #game, #result { margin-top: 15px; }
-    #board { margin: 12px auto; }
-    button, input { font-size: 16px; padding: 8px 14px; border-radius: 5px; border: 1px solid #888; }
-    button { cursor: pointer; background-color: #eaeaea; }
-    button:hover { background-color: #cfcfcf; }
-    input { width: 200px; }
-    .hidden { display: none; }
-    #status { margin-top: 12px; font-weight: bold; }
-    #footer { margin-top: 40px; font-size: 12px; color: #777; }
+    body {
+      background: #222;
+      color: #eee;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      margin-top: 30px;
+    }
+    .sidebar {
+      width: 130px;
+      text-align: center;
+    }
+    .sidebar img {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      border: 3px solid #444;
+      background: #191919;
+    }
+    .sidebar .player-name {
+      font-size: 1.05em;
+      margin-bottom: 18px;
+      font-weight: bold;
+    }
+    .board-area {
+      margin: 0 20px;
+    }
+    .chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 48px);
+      grid-template-rows: repeat(8, 48px);
+      gap: 0;
+      background: #333;
+      border: 4px solid #444;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px #0008;
+    }
+    .square {
+      width: 48px; height: 48px;
+      position: relative;
+      user-select: none;
+      background: #DDB88C;
+    }
+    .square.dark {
+      background: #A66D4F;
+    }
+    .square.highlight {
+      box-shadow: 0 0 0 5px #ff0, 0 0 15px #ff0a;
+      z-index: 2;
+    }
+    .square.skat {
+      box-shadow: 0 0 0 6px orange, 0 0 18px orange;
+    }
+    .square.skatmat {
+      box-shadow: 0 0 0 7px #f33, 0 0 22px #f33;
+    }
+    .piece {
+      width: 44px; height: 44px;
+      margin: 2px;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 1;
+      cursor: pointer;
+      pointer-events: none;
+      user-select: none;
+    }
+    .move-list {
+      margin-top: 18px;
+      background: #191919;
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 290px;
+      overflow-y: auto;
+      font-size: 1em;
+      color: #ccc;
+      box-shadow: 0 0 8px #0007;
+    }
+    .status-bar {
+      text-align: center;
+      font-size: 1.12em;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    .mode-select {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .mode-select select, .mode-select button {
+      font-size: 1em;
+      padding: 7px;
+      margin: 2px;
+      border-radius: 7px;
+      border: 1px solid #888;
+      background: #222;
+      color: #eee;
+    }
+    .discord {
+      margin-top: 12px;
+      font-size: 0.95em;
+      color: #7ecfff;
+    }
+    @media (max-width: 600px) {
+      .container { flex-direction: column; align-items: center; }
+      .board-area { margin: 0; }
+      .move-list { max-height: 150px; font-size: 0.95em; }
+      .sidebar img { width: 54px; height: 54px; }
+      .sidebar { width: 90px; }
+      .chessboard { grid-template-columns: repeat(8, 32px); grid-template-rows: repeat(8, 32px); }
+      .square { width: 32px; height: 32px; }
+      .piece { width: 28px; height: 28px; }
+    }
   </style>
 </head>
 <body>
-  <h2>catur web</h2>
-
-  <div id="welcome">
-
-    <p>selamat datang(bingung mau masukin apa lagi)</p>
+  <div class="mode-select">
+    Mode: 
+    <select id="mode">
+      <option value="vsbot">Player vs Bot (Easy)</option>
+      <option value="vsnab">Player vs NABLOM (Stockfish)</option>
+      <option value="vspemain">Player vs Player</option>
+    </select>
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div class="container">
+    <div class="sidebar" id="player1-sidebar">
+      <img src="img/player.png" id="player1-img" alt="Pemain 1">
+      <div class="player-name" id="player1-name">Pemain 1</div>
+    </div>
+    <div class="board-area">
+      <div class="status-bar" id="status"></div>
+      <div class="chessboard" id="chessboard"></div>
+      <div class="move-list" id="moveList"></div>
+      <div class="discord">
+        Pemenang akan dikirim ke Discord secara otomatis.
+      </div>
+    </div>
+    <div class="sidebar" id="player2-sidebar">
+      <img src="img/bot1.png" id="player2-img" alt="Bot">
+      <div class="player-name" id="player2-name">Bot</div>
+    </div>
   </div>
 
-  <div id="nameInput">
-    <input type="text" id="playerName" placeholder="Masukkan Nama Anda" />
-    <button id="startBtn">gass</button>
-  </div>
-
-  <div id="menu" class="hidden">
-    <button id="vsBot">bot easy</button>
-    <button id="vsP2">P1 vs P2</button>
-  </div>
-
-  <div id="game" class="hidden">
-    <div id="board" style="width: 320px;"></div>
-    <div id="status"></div>
-    <button id="restartBtn">ulang</button>
-  </div>
-
-  <div id="result" class="hidden">
-    <p id="resultText"></p>
-  </div>
-
-  <div id="footer">&copy; catur simple by NABLOM</div>
-
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
-  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-
+  <!-- Stockfish JS engine -->
+  <script src="src/stockfish.js"></script>
   <script>
-    const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7"; 
-    let game = new Chess();
-    let board = null;
-    let playerName = "";
-    let gameMode = "";
-    let startTime = null;
+    // --- Config ---
+    const imgPath = (piece) => `img/${piece}.png`;
+    const playerImgs = {
+      p1: "img/player.png",
+      bot: "img/bot1.png",
+      nab: "img/NABLOM.png",
+      p2: "img/player.png"
+    };
+    const botNames = {
+      bot: "Bot Easy",
+      nab: "NABLOM (Stockfish)"
+    };
+    const discordWebhook = "https://discord.com/api/webhooks/xxxx/xxxx"; // Ganti dengan webhook kamu
 
-    $("#startBtn").click(() => {
-      playerName = $("#playerName").val().trim();
-      if (!playerName) {
-        alert("nama mu masukin dulu kocak");
-        return;
+    // --- Chess Logic ---
+    const PIECES = ["K","Q","R","B","N","P"];
+    const FILES = "abcdefgh";
+    const RANKS = "87654321";
+    const INIT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+    let mode = "vsbot"; // default
+    let turn = "w";
+    let board = [];
+    let selected = null;
+    let moveList = [];
+    let stockfish = null;
+    let busyEngine = false;
+    let gameOver = false;
+    let winner = null;
+
+    function parseFEN(fen) {
+      board = [];
+      let [pos, turnC] = fen.split(' ');
+      turn = turnC;
+      let rows = pos.split("/");
+      for (let r = 0; r < 8; r++) {
+        let row = [];
+        let line = rows[r];
+        let idx = 0;
+        for (let c = 0; c < line.length; c++) {
+          let ch = line[c];
+          if ("12345678".includes(ch)) {
+            for (let i = 0; i < Number(ch); i++) row.push("");
+          } else {
+            row.push(ch);
+          }
+        }
+        board.push(row);
       }
-      $("#nameInput").hide();
-      $("#menu").show();
-    });
-
-    $("#vsBot").click(() => startGame("bot"));
-    $("#vsP2").click(() => startGame("pvp"));
-
-    $("#restartBtn").click(() => {
-      $("#game").hide();
-      $("#result").hide();
-      $("#menu").show();
-      game.reset();
-      board.position("start");
-    });
-
-    function startGame(mode) {
-      gameMode = mode;
-      game.reset();
-      startTime = new Date();
-      $("#menu").hide();
-      $("#result").hide();
-      $("#game").show();
-
-      if (board) board.destroy();
-      board = Chessboard("board", {
-        draggable: true,
-        position: "start",
-        pieceTheme: "img/{piece}.png",
-        onDrop: onDrop,
-      });
-      updateStatus();
     }
 
-    function onDrop(source, target) {
-      let move = game.move({ from: source, to: target, promotion: "q" });
-      if (move === null) return "snapback";
-      updateStatus();
-
-      if (gameMode === "bot" && !game.game_over()) {
-        setTimeout(botMove, 400);
+    function genFEN() {
+      let fen = "";
+      for (let r = 0; r < 8; r++) {
+        let empty = 0;
+        for (let c = 0; c < 8; c++) {
+          let piece = board[r][c];
+          if (!piece) empty++;
+          else {
+            if (empty) { fen += empty; empty = 0; }
+            fen += piece;
+          }
+        }
+        if (empty) fen += empty;
+        fen += (r < 7) ? "/" : "";
       }
-      if (game.game_over()) {
-        endGame();
+      fen += " " + turn + " KQkq - 0 1";
+      return fen;
+    }
+
+    function renderBoard() {
+      const cb = document.getElementById('chessboard');
+      cb.innerHTML = '';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          let sq = document.createElement('div');
+          sq.className = "square" + ((r + c) % 2 ? " dark" : "");
+          sq.dataset.row = r; sq.dataset.col = c;
+
+          let piece = board[r][c];
+          if (piece) {
+            let img = document.createElement('img');
+            let color = piece === piece.toUpperCase() ? "w" : "b";
+            img.src = imgPath(color + piece.toUpperCase());
+            img.className = "piece";
+            sq.appendChild(img);
+          }
+
+          // Highlight selection
+          if (selected && selected.row == r && selected.col == c) {
+            sq.classList.add("highlight");
+          }
+
+          sq.addEventListener('click', () => handleClick(r, c));
+          cb.appendChild(sq);
+        }
+      }
+    }
+
+    function handleClick(r, c) {
+      if (gameOver) return;
+      if (mode === "vsnab" && turn === "b") return; // NabLom (bot) giliran, tunggu
+      if (selected && canMove(selected.row, selected.col, r, c)) {
+        movePiece(selected.row, selected.col, r, c);
+        selected = null;
+      } else if (board[r][c] && ((turn === "w" && board[r][c] === board[r][c].toUpperCase()) ||
+        (turn === "b" && board[r][c] === board[r][c].toLowerCase()))) {
+        selected = { row: r, col: c };
+      } else {
+        selected = null;
+      }
+      renderBoard();
+    }
+
+    function canMove(sr, sc, dr, dc) {
+      // Sederhana: hanya cek apakah tujuan berbeda dan ada bidak sendiri
+      if (sr === dr && sc === dc) return false;
+      let piece = board[sr][sc];
+      if (!piece) return false;
+      if (board[dr][dc] && (piece === piece.toUpperCase() && board[dr][dc] === board[dr][dc].toUpperCase() ||
+        piece === piece.toLowerCase() && board[dr][dc] === board[dr][dc].toLowerCase())) return false;
+      return true; // Untuk demo, izinkan semua gerakan legal (bisa ditambah validasi lebih ketat)
+    }
+
+    function movePiece(sr, sc, dr, dc) {
+      let moveStr = `${FILES[sc]}${RANKS[sr]}${FILES[dc]}${RANKS[dr]}`;
+      board[dr][dc] = board[sr][sc];
+      board[sr][sc] = "";
+      moveList.push(moveStr);
+      turn = turn === "w" ? "b" : "w";
+      updateMoveList();
+      renderBoard();
+      checkStatus();
+      if (!gameOver && ((mode === "vsbot" && turn === "b") || (mode === "vsnab" && turn === "b"))) {
+        setTimeout(botMove, 700);
       }
     }
 
     function botMove() {
-      let moves = game.moves();
-      if (moves.length === 0) return;
-      let move = moves[Math.floor(Math.random() * moves.length)];
-      game.move(move);
-      board.position(game.fen());
-      updateStatus();
-      if (game.game_over()) {
-        endGame();
-      }
-    }
-
-    function updateStatus() {
-      let status = "";
-      if (game.in_checkmate()) {
-        status = "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
-      } else if (game.in_draw()) {
-        status = "Seri.";
-      } else {
-        status = (game.turn() === "w" ? "Putih" : "Hitam") + " giliran jalan";
-      }
-      $("#status").text(status);
-    }
-
-    function endGame() {
-      const endTime = new Date();
-      const duration = ((endTime - startTime) / 1000).toFixed(2);
-      let message = "";
-
-      if (game.in_checkmate()) {
-        const winner = game.turn() === "w" ? "Hitam" : "Putih";
-        message = `game selesai, pemenang: ${winner}. Nama: ${playerName}, durasi: ${duration} detik.`;
-        if (gameMode === "bot" && winner === "Putih" && webhookURL) {
-          fetch(webhookURL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content: `${playerName} mengalahkan bot dalam waktu ${duration} detik!`,
-            }),
-          });
+      if (busyEngine || gameOver) return;
+      busyEngine = true;
+      if (mode === "vsbot") {
+        // Bot random move
+        let moves = [];
+        for (let sr = 0; sr < 8; sr++) {
+          for (let sc = 0; sc < 8; sc++) {
+            let piece = board[sr][sc];
+            if (piece && piece === piece.toLowerCase()) {
+              for (let dr = 0; dr < 8; dr++) {
+                for (let dc = 0; dc < 8; dc++) {
+                  if (canMove(sr, sc, dr, dc)) moves.push({ sr, sc, dr, dc });
+                }
+              }
+            }
+          }
         }
-      } else {
-        message = `game selesai seri. Nama: ${playerName}, durasi: ${duration} detik.`;
+        if (moves.length) {
+          let mv = moves[Math.floor(Math.random() * moves.length)];
+          movePiece(mv.sr, mv.sc, mv.dr, mv.dc);
+        }
+        busyEngine = false;
+      } else if (mode === "vsnab") {
+        // Stockfish
+        if (!stockfish) stockfish = STOCKFISH();
+        let fen = genFEN();
+        stockfish.onmessage = function(line) {
+          if (line.startsWith("bestmove")) {
+            let best = line.split(" ")[1];
+            if (best === "(none)") { busyEngine = false; return; }
+            let sc = FILES.indexOf(best[0]);
+            let sr = RANKS.indexOf(best[1]);
+            let dc = FILES.indexOf(best[2]);
+            let dr = RANKS.indexOf(best[3]);
+            movePiece(sr, sc, dr, dc);
+            busyEngine = false;
+          }
+        };
+        stockfish.postMessage("position fen " + fen);
+        stockfish.postMessage("go movetime 400");
       }
-
-      $("#resultText").text(message);
-      $("#result").show();
     }
+
+    function updateMoveList() {
+      document.getElementById('moveList').innerHTML = moveList
+        .map((mv, i) => `<b>${i % 2 === 0 ? 'Putih' : 'Hitam'}</b>: ${mv}`).join('<br>');
+    }
+
+    function checkStatus() {
+      // Sederhana: cek apakah raja sudah dimakan
+      let wKing = false, bKing = false;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        if (board[r][c] === "K") wKing = true;
+        if (board[r][c] === "k") bKing = true;
+      }
+      if (!wKing || !bKing) {
+        gameOver = true;
+        winner = wKing ? "Putih" : "Hitam";
+        document.getElementById('status').textContent = `Permainan selesai! Pemenang: ${winner}.`;
+        sendDiscordWinner(winner);
+      } else {
+        document.getElementById('status').textContent = `${turn === "w" ? "Giliran Putih" : "Giliran Hitam"}`;
+      }
+    }
+
+    function sendDiscordWinner(winner) {
+      // Kirim ke Discord webhook
+      fetch(discordWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: `Permainan selesai! Pemenang: ${winner}` })
+      }).catch(() => {});
+    }
+
+    function setSidebar() {
+      // Sidebar gambar & nama sesuai mode
+      if (mode === "vsbot") {
+        document.getElementById('player1-img').src = playerImgs.p1;
+        document.getElementById('player1-name').textContent = "Pemain 1";
+        document.getElementById('player2-img').src = playerImgs.bot;
+        document.getElementById('player2-name').textContent = botNames.bot;
+      } else if (mode === "vsnab") {
+        document.getElementById('player1-img').src = playerImgs.p1;
+        document.getElementById('player1-name').textContent = "Pemain 1";
+        document.getElementById('player2-img').src = playerImgs.nab;
+        document.getElementById('player2-name').textContent = botNames.nab;
+      } else if (mode === "vspemain") {
+        document.getElementById('player1-img').src = playerImgs.p1;
+        document.getElementById('player1-name').textContent = "Pemain 1";
+        document.getElementById('player2-img').src = playerImgs.p2;
+        document.getElementById('player2-name').textContent = "Pemain 2";
+      }
+    }
+
+    function resetGame() {
+      parseFEN(INIT_FEN);
+      selected = null;
+      moveList = [];
+      gameOver = false;
+      winner = null;
+      turn = "w";
+      updateMoveList();
+      setSidebar();
+      renderBoard();
+      document.getElementById('status').textContent = "Permainan baru dimulai!";
+    }
+
+    document.getElementById('resetBtn').onclick = resetGame;
+    document.getElementById('mode').onchange = function() {
+      mode = this.value;
+      resetGame();
+    };
+
+    // --- Inisialisasi ---
+    resetGame();
+    // Musik auto-play di mobile fix
+    document.body.addEventListener('click', () => {
+      document.getElementById('bgmusic').play();
+    }, { once: true });
   </script>
 </body>
 </html>
