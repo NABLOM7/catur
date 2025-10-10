@@ -33,26 +33,18 @@
   <div id="inputNames" class="hidden">
     <div id="inputBot" class="hidden">
       <input type="text" id="playerBotName" placeholder="Nama Anda" />
-      <button id="botNext">Lanjut</button>
+      <label>Pilih warna:</label>
+      <select id="colorSelectBot">
+        <option value="w">Putih</option>
+        <option value="b">Hitam</option>
+      </select>
+      <button id="botNext">Mulai</button>
     </div>
-    <div id="inputP1" class="hidden">
-      <input type="text" id="player1Name" placeholder="Nama Pemain 1" />
-      <button id="p1Next">Lanjut</button>
+    <div id="inputPvP" class="hidden">
+      <input type="text" id="player1Name" placeholder="Nama Pemain 1 (Putih)" /><br><br>
+      <input type="text" id="player2Name" placeholder="Nama Pemain 2 (Hitam)" /><br><br>
+      <button id="pvpNext">Mulai</button>
     </div>
-    <div id="inputP2" class="hidden">
-      <input type="text" id="player2Name" placeholder="Nama Pemain 2" />
-      <button id="p2Next">Lanjut</button>
-    </div>
-  </div>
-
-  <!-- Pilih Warna -->
-  <div id="chooseColor" class="hidden">
-    <label>Pilih warna yang ingin dimainkan:</label><br>
-    <select id="colorSelect">
-      <option value="w">Putih</option>
-      <option value="b">Hitam</option>
-    </select>
-    <button id="colorBtn">Mulai</button>
   </div>
 
   <!-- Game -->
@@ -74,7 +66,6 @@
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
   <script>
-    // --- KONFIGURASI AWAL ---
     let game = new Chess();
     let board = null;
     let gameMode = "";
@@ -84,8 +75,6 @@
     let playerBotName = "";
     let startTime = null;
     const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7";
-
-    // --- LOGIKA TAMPILAN ---
 
     // Step 1: Pilih mode
     $("#modeBot").click(function() {
@@ -98,61 +87,52 @@
       gameMode = "pvp";
       $("#chooseMode").hide();
       $("#inputNames").show();
-      $("#inputP1").show();
+      $("#inputPvP").show();
     });
 
-    // Step 2: Input nama
+    // Step 2a: Input nama & warna (Bot mode)
     $("#botNext").click(function() {
       playerBotName = $("#playerBotName").val().trim();
+      playerColor = $("#colorSelectBot").val();
       if (!playerBotName) { alert("Nama wajib diisi."); return; }
       $("#inputBot").hide();
       $("#inputNames").hide();
-      $("#chooseColor").show();
-    });
-
-    $("#p1Next").click(function() {
-      player1Name = $("#player1Name").val().trim();
-      if (!player1Name) { alert("Nama pemain 1 wajib diisi."); return; }
-      $("#inputP1").hide();
-      $("#inputP2").show();
-    });
-
-    $("#p2Next").click(function() {
-      player2Name = $("#player2Name").val().trim();
-      if (!player2Name) { alert("Nama pemain 2 wajib diisi."); return; }
-      $("#inputP2").hide();
-      $("#inputNames").hide();
-      $("#chooseColor").show();
-    });
-
-    // Step 3: Pilih warna
-    $("#colorBtn").click(function() {
-      playerColor = $("#colorSelect").val();
-      $("#chooseColor").hide();
       startGame();
     });
 
-    // Step 4: Mulai game
+    // Step 2b: Input nama PvP
+    $("#pvpNext").click(function() {
+      player1Name = $("#player1Name").val().trim();
+      player2Name = $("#player2Name").val().trim();
+      if (!player1Name || !player2Name) { alert("Nama semua pemain wajib diisi."); return; }
+      $("#inputPvP").hide();
+      $("#inputNames").hide();
+      playerColor = "w"; // player 1 selalu putih, player 2 selalu hitam
+      startGame();
+    });
+
+    // Step 3: Mulai game
     function startGame() {
       game.reset();
       startTime = new Date();
       $("#result").hide();
       $("#game").show();
 
-      // Inisialisasi papan catur
       if (board) board.destroy();
       board = Chessboard("board", {
         draggable: true,
         position: "start",
         pieceTheme: "img/{piece}.png",
-        orientation: playerColor === "w" ? "white" : "black",
+        orientation: "white", // PvP selalu putih, bot mode sesuai playerColor
         onDrop: onDrop,
       });
-
+      if (gameMode === "bot" && playerColor === "b") {
+        // Bot sebagai putih, bot langsung jalan di awal
+        setTimeout(botMove, 400);
+      }
       updateStatus();
     }
 
-    // --- LOGIKA GAME ---
     function onDrop(source, target) {
       let move = game.move({ from: source, to: target, promotion: "q" });
       if (move === null) return "snapback";
@@ -187,7 +167,7 @@
         status = (game.turn() === "w" ? "Giliran Putih" : "Giliran Hitam");
         if (gameMode === "pvp") {
           status += ". ";
-          status += (game.turn() === playerColor ? player1Name : player2Name) + " jalan";
+          status += (game.turn() === "w" ? player1Name : player2Name) + " jalan";
         }
         if (gameMode === "bot") {
           status += ". ";
@@ -207,7 +187,6 @@
         const winner = game.turn() === "w" ? "Hitam" : "Putih";
         if (gameMode === "bot") {
           message = `Game selesai, pemenang: ${winner}. Nama: ${playerBotName}, durasi: ${duration} detik.`;
-          // Discord
           if (winner === (playerColor === "w" ? "Putih" : "Hitam")) {
             fetch(webhookURL, {
               method: "POST",
@@ -223,27 +202,22 @@
       } else {
         message = `Game selesai seri. Durasi: ${duration} detik.`;
       }
-
       $("#resultText").text(message);
       $("#result").show();
     }
 
-    // Reset/ulang game
     $("#restartBtn").click(function() {
       $("#game").hide();
       $("#result").hide();
       $("#chooseMode").show();
       player1Name = ""; player2Name = ""; playerBotName = "";
       $("#player1Name").val(""); $("#player2Name").val(""); $("#playerBotName").val("");
-      $("#inputBot").hide(); $("#inputP2").hide();
+      $("#inputBot").hide(); $("#inputPvP").hide();
     });
 
-    // Inisialisasi: hide semua input kecuali mode pilih
     $(document).ready(function() {
       $("#inputBot").hide();
-      $("#inputP1").hide();
-      $("#inputP2").hide();
-      $("#chooseColor").hide();
+      $("#inputPvP").hide();
     });
   </script>
 </body>
