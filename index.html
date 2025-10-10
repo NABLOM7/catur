@@ -3,39 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Catur Web Klik Mode</title>
-  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <title>Game Catur Web Custom Bidak</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; padding: 18px;}
     h2 { margin-bottom: 12px; }
-    #chooseMode, #inputNames, #game, #result { margin-top: 15px; }
-    #board { margin: 14px auto; }
-    button, input, select { font-size: 16px; padding: 7px 12px; border-radius: 5px; border: 1px solid #888; }
+    #welcome, #chooseMode, #inputNames, #game, #result { margin-top: 15px; }
+    #board { margin: 12px auto; }
+    button, input, select { font-size: 16px; padding: 8px 14px; border-radius: 5px; border: 1px solid #888; }
+    button { cursor: pointer; background-color: #eaeaea; }
+    button:hover { background-color: #cfcfcf; }
+    input { width: 200px; }
     .hidden { display: none; }
-    #status { margin: 12px auto 12px auto; font-weight: bold; min-height:32px;}
+    #status { margin-top: 12px; font-weight: bold; min-height: 40px;}
     #footer { margin-top: 40px; font-size: 12px; color: #777; }
-    .square.selected { box-shadow: 0 0 0 4px #2a7b1f, 0 0 15px #2a7b1f8c; z-index: 2; }
-    .square.move-marker { position: relative; }
-    .square.move-marker::after {
-      content: "";
-      position: absolute;
-      left: 50%; top: 50%;
-      width: 18px; height: 18px;
-      background: rgba(36,150,38,0.85);
-      border-radius: 50%;
-      transform: translate(-50%,-50%);
-      z-index: 3;
-      pointer-events: none;
-    }
+    /* Modal promosi pawn */
+    #promoModal.hidden { display:none; }
+    #promoModal { position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;
+      display:flex;align-items:center;justify-content:center;z-index:999; }
+    #promoModal .modal-box { background:#fff;padding:22px 28px;border-radius:12px;
+      box-shadow:0 4px 32px #0006;text-align:center; }
+    #promoModal .promoBtn { font-size:17px;margin:7px 5px;border-radius:8px;padding:8px 22px; }
   </style>
 </head>
 <body>
-  <h2>Catur Web Mode</h2>
+  <h2>catur web</h2>
+  <div id="welcome"><p>Selamat datang di catur web</p></div>
+
   <!-- Pilih Mode -->
   <div id="chooseMode">
     <button id="modeBot">Player vs Bot</button>
     <button id="modeP2">Player vs Player</button>
   </div>
+
   <!-- Input Nama -->
   <div id="inputNames" class="hidden">
     <div id="inputBot" class="hidden">
@@ -53,15 +53,31 @@
       <button id="pvpNext">Mulai</button>
     </div>
   </div>
-  <div id="game" class="hidden">
-    <div id="status"></div>
-    <div id="board" style="width: 320px;"></div>
-    <button id="restartBtn">Ulang Permainan</button>
+
+  <!-- Modal Promosi Bidak -->
+  <div id="promoModal" class="hidden">
+    <div class="modal-box">
+      <h3>Pilih promosi bidak:</h3>
+      <button class="promoBtn" data-piece="q">Ratu (Queen)</button>
+      <button class="promoBtn" data-piece="r">Benteng (Rook)</button>
+      <button class="promoBtn" data-piece="b">Gajah (Bishop)</button>
+      <button class="promoBtn" data-piece="n">Kuda (Knight)</button>
+    </div>
   </div>
+
+  <!-- Game -->
+  <div id="game" class="hidden">
+    <div id="board" style="width: 320px;"></div>
+    <div id="status"></div>
+    <button id="restartBtn">Ulang</button>
+  </div>
+
+  <!-- Result -->
   <div id="result" class="hidden">
     <p id="resultText"></p>
   </div>
-  <div id="footer">&copy; catur klik NABLOM7</div>
+
+  <div id="footer">&copy; catur simple by NABLOM</div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
@@ -69,110 +85,162 @@
   <script>
     let game = new Chess();
     let board = null;
-    let selectedSquare = null;   // square bidak yang dipilih, misal "g1"
-    let moveSquares = [];        // array square tujuan legal, misal ["f3","h3"]
     let gameMode = "";
     let playerColor = "w";
-    let player1Name = "", player2Name = "", playerBotName = "";
+    let player1Name = "";
+    let player2Name = "";
+    let playerBotName = "";
     let startTime = null;
+    let pendingPromotion = null; // Untuk promosi pawn
+    let selectedSquare = null;   // Untuk klik bidak, klik tujuan
 
-    // Pilih mode game
+    const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7";
+
+    // Step 1: Pilih mode
     $("#modeBot").click(function() {
       gameMode = "bot";
       $("#chooseMode").hide();
-      $("#inputNames").show(); $("#inputBot").show();
+      $("#inputNames").show();
+      $("#inputBot").show();
     });
     $("#modeP2").click(function() {
       gameMode = "pvp";
       $("#chooseMode").hide();
-      $("#inputNames").show(); $("#inputPvP").show();
+      $("#inputNames").show();
+      $("#inputPvP").show();
     });
+
+    // Step 2a: Input nama & warna (Bot mode)
     $("#botNext").click(function() {
       playerBotName = $("#playerBotName").val().trim();
       playerColor = $("#colorSelectBot").val();
       if (!playerBotName) { alert("Nama wajib diisi."); return; }
-      $("#inputBot").hide(); $("#inputNames").hide(); startGame();
+      $("#inputBot").hide();
+      $("#inputNames").hide();
+      startGame();
     });
+
+    // Step 2b: Input nama PvP
     $("#pvpNext").click(function() {
       player1Name = $("#player1Name").val().trim();
       player2Name = $("#player2Name").val().trim();
       if (!player1Name || !player2Name) { alert("Nama semua pemain wajib diisi."); return; }
-      $("#inputPvP").hide(); $("#inputNames").hide();
-      playerColor = "w"; startGame();
+      $("#inputPvP").hide();
+      $("#inputNames").hide();
+      playerColor = "w"; // player 1 selalu putih, player 2 selalu hitam
+      startGame();
     });
 
-    // Inisialisasi papan catur
+    // Step 3: Mulai game
     function startGame() {
       game.reset();
-      selectedSquare = null; moveSquares = [];
-      $("#result").hide(); $("#game").show();
+      startTime = new Date();
+      $("#result").hide();
+      $("#game").show();
+
       if (board) board.destroy();
       board = Chessboard("board", {
         draggable: false,
         position: "start",
         pieceTheme: "img/{piece}.png",
-        orientation: (gameMode === "bot" ? (playerColor === "w" ? "white" : "black") : "white")
+        orientation: (gameMode === "bot" ? (playerColor === "w" ? "white" : "black") : "white"),
       });
-      setTimeout(renderBoardMarkers, 120);
+
+      selectedSquare = null;
+
+      // Event klik bidak & tujuan
+      $("#board").off("click").on("click", ".square", function() {
+        const square = $(this).attr("data-square");
+        if (!square) return;
+        // Jika belum pilih bidak, pilih bidak sendiri
+        if (!selectedSquare) {
+          const piece = game.get(square);
+          if (piece && piece.color === game.turn()) {
+            selectedSquare = square;
+          }
+        } else {
+          // Sudah pilih bidak, klik ke square tujuan
+          // Validasi langkah legal
+          let moves = game.moves({ square: selectedSquare, verbose: true });
+          let isLegal = moves.find(m => m.to === square);
+          if (!isLegal) {
+            selectedSquare = null;
+            return;
+          }
+          // Cek promosi
+          let moveObj = { from: selectedSquare, to: square };
+          let piece = game.get(selectedSquare);
+          let promotion = undefined;
+          if (piece && piece.type === "p" &&
+              ((piece.color === "w" && selectedSquare[1] === "7" && square[1] === "8") ||
+               (piece.color === "b" && selectedSquare[1] === "2" && square[1] === "1"))) {
+            // Show modal promosi
+            pendingPromotion = { from: selectedSquare, to: square };
+            $("#promoModal").removeClass("hidden");
+            return;
+          } else {
+            moveObj.promotion = "q"; // default queen untuk chess.js biar ga error
+          }
+          let move = game.move(moveObj);
+          if (move === null) { selectedSquare = null; return; }
+          board.position(game.fen());
+          selectedSquare = null;
+          updateStatus();
+          // Bot jalan jika perlu
+          if (gameMode === "bot" && !game.game_over() && game.turn() !== playerColor) setTimeout(botMove, 450);
+          if (game.game_over()) endGame();
+        }
+      });
+
+      if (gameMode === "bot" && playerColor === "b") {
+        setTimeout(botMove, 400);
+      }
       updateStatus();
-      if (gameMode === "bot" && playerColor === "b") setTimeout(botMove, 400);
     }
 
-    // Interaksi klik
-    $("#board").on("click", ".square", function() {
-      const square = $(this).attr("data-square");
-      if (!square) return;
-      // Jika sudah memilih bidak: klik kotak marker untuk move
-      if (selectedSquare && moveSquares.includes(square)) {
-        doMove(selectedSquare, square);
-        selectedSquare = null; moveSquares = [];
-        renderBoardMarkers();
-        return;
-      }
-      // Pilih bidak sendiri
-      const piece = game.get(square);
-      if (piece && piece.color === game.turn()) {
-        selectedSquare = square;
-        moveSquares = game.moves({ square: square, verbose: true }).map(m => m.to);
-        renderBoardMarkers();
+    // Modal promosi handler
+    $(".promoBtn").click(function(){
+      let pieceType = $(this).data("piece");
+      if(pendingPromotion) {
+        let moveObj = {
+          from: pendingPromotion.from,
+          to: pendingPromotion.to,
+          promotion: pieceType
+        };
+        let move = game.move(moveObj);
+        if(move !== null){
+          board.position(game.fen());
+          updateStatus();
+          $("#promoModal").addClass("hidden");
+          pendingPromotion = null;
+          selectedSquare = null;
+          // Bot jalan jika perlu
+          if (gameMode === "bot" && !game.game_over() && game.turn() !== playerColor) {
+            setTimeout(botMove, 450);
+          }
+          if (game.game_over()) endGame();
+        } else {
+          alert("Promosi gagal!");
+          $("#promoModal").addClass("hidden");
+          pendingPromotion = null;
+          selectedSquare = null;
+        }
       }
     });
 
-    function doMove(from, to) {
-      const piece = game.get(from);
-      let promotion = undefined;
-      if (piece && piece.type === "p" &&
-          ((piece.color === "w" && from[1] === "7" && to[1] === "8") ||
-           (piece.color === "b" && from[1] === "2" && to[1] === "1"))) {
-        promotion = prompt("Promosi ke (q,r,b,n):", "q") || "q";
-      }
-      let moveObj = { from: from, to: to };
-      if (promotion) moveObj.promotion = promotion;
-      let move = game.move(moveObj);
-      if (move === null) return;
-      board.position(game.fen());
-      renderBoardMarkers();
-      updateStatus();
-      if (gameMode === "bot" && !game.game_over() && game.turn() !== playerColor) setTimeout(botMove, 450);
-      if (game.game_over()) endGame();
-    }
-
-    function renderBoardMarkers() {
-      $(".square").removeClass("selected move-marker");
-      if (selectedSquare) {
-        $(`[data-square='${selectedSquare}']`).addClass("selected");
-        moveSquares.forEach(sq => $(`[data-square='${sq}']`).addClass("move-marker"));
-      }
-    }
-
     function botMove() {
       let moves = game.moves({ verbose: true });
-      if (!moves.length) return;
+      if (moves.length === 0) return;
       let promoMoves = moves.filter(m => m.flags.includes("p"));
-      let move = promoMoves.length ? promoMoves.find(m => m.promotion === "q") || promoMoves[0] : moves[Math.floor(Math.random()*moves.length)];
-      game.move({ from: move.from, to: move.to, promotion: move.promotion });
+      let move;
+      if (promoMoves.length > 0) {
+        move = promoMoves.find(m => m.promotion === "q") || promoMoves[0];
+        game.move({ from: move.from, to: move.to, promotion: move.promotion });
+      } else {
+        move = moves[Math.floor(Math.random() * moves.length)];
+        game.move({ from: move.from, to: move.to, promotion: move.promotion });
+      }
       board.position(game.fen());
-      renderBoardMarkers();
       updateStatus();
       if (game.game_over()) endGame();
     }
@@ -201,20 +269,54 @@
     }
 
     function endGame() {
-      let status = $("#status").text();
-      $("#resultText").text(status);
+      const endTime = new Date();
+      const duration = ((endTime - startTime) / 1000).toFixed(2);
+      let message = "";
+
+      if (game.in_checkmate()) {
+        const winner = game.turn() === "w" ? "Hitam" : "Putih";
+        if (gameMode === "bot") {
+          message = `Game selesai, pemenang: ${winner}. Nama: ${playerBotName}, durasi: ${duration} detik.`;
+          if (winner === (playerColor === "w" ? "Putih" : "Hitam")) {
+            fetch(webhookURL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: `${playerBotName} menang lawan bot sebagai ${winner} dalam waktu ${duration} detik!`,
+              }),
+            });
+          }
+        } else {
+          // PvP mode, kirim webhook ke discord
+          let pemenangNama = (winner === "Putih") ? player1Name : player2Name;
+          message = `Game selesai, pemenang: ${winner} (${pemenangNama}). P1: ${player1Name}, P2: ${player2Name}, durasi: ${duration} detik.`;
+          fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `Permainan PvP selesai! Pemenang: ${winner} (${pemenangNama}). Durasi: ${duration} detik. Pemain Putih: ${player1Name}, Pemain Hitam: ${player2Name}`
+            }),
+          });
+        }
+      } else {
+        message = `Game selesai seri. Durasi: ${duration} detik.`;
+      }
+      $("#resultText").text(message);
       $("#result").show();
     }
 
     $("#restartBtn").click(function() {
-      $("#game").hide(); $("#result").hide(); $("#chooseMode").show();
+      $("#game").hide();
+      $("#result").hide();
+      $("#chooseMode").show();
       player1Name = ""; player2Name = ""; playerBotName = "";
       $("#player1Name").val(""); $("#player2Name").val(""); $("#playerBotName").val("");
       $("#inputBot").hide(); $("#inputPvP").hide();
     });
 
-    $(document).ready(function(){
-      $("#inputBot").hide(); $("#inputPvP").hide();
+    $(document).ready(function() {
+      $("#inputBot").hide();
+      $("#inputPvP").hide();
     });
   </script>
 </body>
