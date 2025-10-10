@@ -3,23 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Catur Web Custom Bidak</title>
-  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
+  <title>Catur Web Klik Mode</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; padding: 18px;}
     h2 { margin-bottom: 12px; }
-    #welcome, #chooseMode, #inputNames, #game, #result { margin-top: 15px; }
-    #board { margin: 12px auto; }
-    button, input, select { font-size: 16px; padding: 8px 14px; border-radius: 5px; border: 1px solid #888; }
-    button { cursor: pointer; background-color: #eaeaea; }
-    button:hover { background-color: #cfcfcf; }
-    input { width: 200px; }
+    #chooseMode, #inputNames, #game, #result { margin-top: 15px; }
+    #board { margin: 14px auto; }
+    button, input, select { font-size: 16px; padding: 7px 12px; border-radius: 5px; border: 1px solid #888; }
     .hidden { display: none; }
-    #status { margin-top: 12px; font-weight: bold; }
+    #status { margin: 12px auto 12px auto; font-weight: bold; min-height:32px;}
     #footer { margin-top: 40px; font-size: 12px; color: #777; }
-    /* Highlight bidak yang dipilih */
     .square.selected { box-shadow: 0 0 0 4px #2a7b1f, 0 0 15px #2a7b1f8c; z-index: 2; }
-    /* Marker langkah legal */
     .square.move-marker { position: relative; }
     .square.move-marker::after {
       content: "";
@@ -35,13 +30,13 @@
   </style>
 </head>
 <body>
-  <h2>catur web</h2>
-  <div id="welcome"><p>Selamat datang di catur web</p></div>
-  <!-- Pilih Mode & Nama (disederhanakan, bisa disesuaikan) -->
+  <h2>Catur Web Mode</h2>
+  <!-- Pilih Mode -->
   <div id="chooseMode">
     <button id="modeBot">Player vs Bot</button>
     <button id="modeP2">Player vs Player</button>
   </div>
+  <!-- Input Nama -->
   <div id="inputNames" class="hidden">
     <div id="inputBot" class="hidden">
       <input type="text" id="playerBotName" placeholder="Nama Anda" />
@@ -58,31 +53,30 @@
       <button id="pvpNext">Mulai</button>
     </div>
   </div>
-  <!-- Game -->
   <div id="game" class="hidden">
-    <div id="board" style="width: 320px;"></div>
     <div id="status"></div>
-    <button id="restartBtn">Ulang</button>
+    <div id="board" style="width: 320px;"></div>
+    <button id="restartBtn">Ulang Permainan</button>
   </div>
-  <!-- Result -->
   <div id="result" class="hidden">
     <p id="resultText"></p>
   </div>
-  <div id="footer">&copy; catur simple by NABLOM</div>
+  <div id="footer">&copy; catur klik NABLOM7</div>
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
   <script>
     let game = new Chess();
     let board = null;
+    let selectedSquare = null;   // square bidak yang dipilih, misal "g1"
+    let moveSquares = [];        // array square tujuan legal, misal ["f3","h3"]
     let gameMode = "";
     let playerColor = "w";
     let player1Name = "", player2Name = "", playerBotName = "";
     let startTime = null;
-    let selectedSquare = null;   // square bidak yang dipilih, misal "g1"
-    let moveSquares = [];        // array square tujuan legal, misal ["f3","h3"]
 
-    // --- PILIH MODE & NAMA ---
+    // Pilih mode game
     $("#modeBot").click(function() {
       gameMode = "bot";
       $("#chooseMode").hide();
@@ -107,58 +101,45 @@
       playerColor = "w"; startGame();
     });
 
-    // --- GAME UTAMA ---
+    // Inisialisasi papan catur
     function startGame() {
-      game.reset(); startTime = new Date();
-      $("#result").hide(); $("#game").show();
+      game.reset();
       selectedSquare = null; moveSquares = [];
+      $("#result").hide(); $("#game").show();
       if (board) board.destroy();
       board = Chessboard("board", {
         draggable: false,
         position: "start",
         pieceTheme: "img/{piece}.png",
-        orientation: (gameMode === "bot" ? (playerColor === "w" ? "white" : "black") : "white"),
-        // Disable drag & drop
-        onPieceClick: onPieceClick,   // custom handler
-        onSquareClick: onSquareClick, // custom handler
+        orientation: (gameMode === "bot" ? (playerColor === "w" ? "white" : "black") : "white")
       });
-      if (gameMode === "bot" && playerColor === "b") setTimeout(botMove, 400);
-      renderBoardMarkers();
+      setTimeout(renderBoardMarkers, 120);
       updateStatus();
+      if (gameMode === "bot" && playerColor === "b") setTimeout(botMove, 400);
     }
 
-    // --- CUSTOM INTERAKSI: PILIH BIDAK DULU ---
+    // Interaksi klik
     $("#board").on("click", ".square", function() {
-      let square = $(this).data("square");
+      const square = $(this).attr("data-square");
       if (!square) return;
-      if (selectedSquare) {
-        // Jika klik ke salah satu kotak tujuan legal -> jalankan move
-        if (moveSquares.includes(square)) {
-          doMove(selectedSquare, square);
-          selectedSquare = null; moveSquares = [];
-          renderBoardMarkers();
-          return;
-        }
+      // Jika sudah memilih bidak: klik kotak marker untuk move
+      if (selectedSquare && moveSquares.includes(square)) {
+        doMove(selectedSquare, square);
+        selectedSquare = null; moveSquares = [];
+        renderBoardMarkers();
+        return;
       }
-      // Jika klik bidak sendiri: highlight & tampilkan marker langkah legal
-      let piece = game.get(square);
+      // Pilih bidak sendiri
+      const piece = game.get(square);
       if (piece && piece.color === game.turn()) {
         selectedSquare = square;
-        moveSquares = getLegalMoves(square).map(m => m.to);
+        moveSquares = game.moves({ square: square, verbose: true }).map(m => m.to);
         renderBoardMarkers();
       }
     });
 
-    function onPieceClick(piece, square) { /* Not used, logic di atas */ }
-    function onSquareClick(square)        { /* Not used, logic di atas */ }
-
-    function getLegalMoves(square) {
-      // chess.js: ambil langkah legal dari square
-      return game.moves({ square: square, verbose: true });
-    }
     function doMove(from, to) {
-      // Cek promosi pawn
-      let piece = game.get(from);
+      const piece = game.get(from);
       let promotion = undefined;
       if (piece && piece.type === "p" &&
           ((piece.color === "w" && from[1] === "7" && to[1] === "8") ||
@@ -168,32 +149,25 @@
       let moveObj = { from: from, to: to };
       if (promotion) moveObj.promotion = promotion;
       let move = game.move(moveObj);
-      if (move === null) return; // illegal
+      if (move === null) return;
       board.position(game.fen());
       renderBoardMarkers();
       updateStatus();
-      // Bot jalan jika perlu
       if (gameMode === "bot" && !game.game_over() && game.turn() !== playerColor) setTimeout(botMove, 450);
       if (game.game_over()) endGame();
     }
 
     function renderBoardMarkers() {
-      // Hilangkan semua marker & highlight
-      $("#board .square").removeClass("selected move-marker");
-      // Highlight bidak yang dipilih
+      $(".square").removeClass("selected move-marker");
       if (selectedSquare) {
-        $(`#board .square[data-square='${selectedSquare}']`).addClass("selected");
-        // Marker langkah legal
-        moveSquares.forEach(sq => {
-          $(`#board .square[data-square='${sq}']`).addClass("move-marker");
-        });
+        $(`[data-square='${selectedSquare}']`).addClass("selected");
+        moveSquares.forEach(sq => $(`[data-square='${sq}']`).addClass("move-marker"));
       }
     }
 
     function botMove() {
       let moves = game.moves({ verbose: true });
       if (!moves.length) return;
-      // Pilih random move, prioritaskan promosi queen jika ada
       let promoMoves = moves.filter(m => m.flags.includes("p"));
       let move = promoMoves.length ? promoMoves.find(m => m.promotion === "q") || promoMoves[0] : moves[Math.floor(Math.random()*moves.length)];
       game.move({ from: move.from, to: move.to, promotion: move.promotion });
@@ -205,11 +179,9 @@
 
     function updateStatus() {
       let status = "";
-      // Skak
       if (game.in_check()) {
-        status = (game.turn() === "w" ? "Raja Putih Skak!" : "Raja Hitam Skak!") + " ";
+        status += (game.turn() === "w" ? "Raja Putih Skak! " : "Raja Hitam Skak! ");
       }
-      // Selesai
       if (game.in_checkmate()) {
         status += "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
       } else if (game.in_draw()) {
@@ -229,30 +201,19 @@
     }
 
     function endGame() {
-      const endTime = new Date();
-      const duration = ((endTime - startTime) / 1000).toFixed(2);
-      let message = "";
-      if (game.in_checkmate()) {
-        const winner = game.turn() === "w" ? "Hitam" : "Putih";
-        if (gameMode === "bot") {
-          message = `Game selesai, pemenang: ${winner}. Nama: ${playerBotName}, durasi: ${duration} detik.`;
-        } else {
-          let pemenangNama = (winner === "Putih") ? player1Name : player2Name;
-          message = `Game selesai, pemenang: ${winner} (${pemenangNama}). P1: ${player1Name}, P2: ${player2Name}, durasi: ${duration} detik.`;
-        }
-      } else {
-        message = `Game selesai seri. Durasi: ${duration} detik.`;
-      }
-      $("#resultText").text(message);
+      let status = $("#status").text();
+      $("#resultText").text(status);
       $("#result").show();
     }
+
     $("#restartBtn").click(function() {
       $("#game").hide(); $("#result").hide(); $("#chooseMode").show();
       player1Name = ""; player2Name = ""; playerBotName = "";
       $("#player1Name").val(""); $("#player2Name").val(""); $("#playerBotName").val("");
       $("#inputBot").hide(); $("#inputPvP").hide();
     });
-    $(document).ready(function() {
+
+    $(document).ready(function(){
       $("#inputBot").hide(); $("#inputPvP").hide();
     });
   </script>
