@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Catur Web Unicode (Tata Foto Pemain Atas-Bawah)</title>
+  <title>catur </title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; margin:0;}
@@ -36,27 +36,27 @@
   </style>
 </head>
 <body>
-  <h2>Catur Web Unicode (Tata Foto Pemain Atas-Bawah)</h2>
-  <!-- Pilih Mode -->
+  <h4>catur simple beta testing (sakit kepala buat ginian)</h4>
+  <!-- mode nya-->
   <div id="chooseMode">
-    <button id="modeBot">Player vs Bot</button>
-    <button id="modeP2">Player vs Player</button>
+    <button id="modeBot">player vs Bot(easy)</button>
+    <button id="modeP2">player vs player</button>
   </div>
-  <!-- Input Nama -->
+  <!-- nama mu -->
   <div id="inputNames" class="hidden">
     <div id="inputBot" class="hidden">
       <input type="text" id="playerBotName" placeholder="Nama Anda"/>
-      <label>Pilih warna:</label>
+      <label>hitam apa putih?:</label>
       <select id="colorSelectBot">
         <option value="w">Putih</option>
         <option value="b">Hitam</option>
       </select>
-      <button id="botNext">Mulai</button>
+      <button id="botNext">gass</button>
     </div>
     <div id="inputPvP" class="hidden">
       <input type="text" id="player1Name" placeholder="Nama Pemain 1 (Putih)"/><br><br>
       <input type="text" id="player2Name" placeholder="Nama Pemain 2 (Hitam)"/><br><br>
-      <button id="pvpNext">Mulai</button>
+      <button id="pvpNext">gasss</button>
     </div>
   </div>
   <div id="game" class="hidden">
@@ -75,9 +75,9 @@
     <div id="result" class="hidden">
       <p id="resultText"></p>
     </div>
-    <button id="restartBtn">Ulang Permainan</button>
+    <button id="restartBtn">balik ke halaman</button>
   </div>
-  <div id="footer">&copy; catur unicode NABLOM7</div>
+  <div id="footer">&copy; catur unicode NABLOM</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
   <script>
@@ -88,7 +88,6 @@
     };
     const IMG_PUTIH = "img/putih.png";
     const IMG_HITAM = "img/hitam.png";
-    const IMG_BOT   = "img/bot.png"; // opsional, bisa pakai hitam.png/putih.png juga
 
     let game = new Chess();
     let selected = null;
@@ -97,10 +96,10 @@
     let playerColor = "w";
     let player1Name = "", player2Name = "", playerBotName = "";
     let startTime = null;
-    let playerFoto = {}; // {atas:?, bawah:?}
-    let playerNama = {}; // {atas:?, bawah:?}
+    let namaAtas = "Hitam";
+    let namaBawah = "Putih";
 
-    // Mode game
+    // modenya
     document.getElementById("modeBot").onclick = function() {
       gameMode = "bot";
       document.getElementById("chooseMode").classList.add("hidden");
@@ -134,29 +133,23 @@
     };
 
     function setFotoNama() {
-      // Tata letak: Pemain putih selalu di bawah, hitam di atas
+      // hal terpenting lah pokoknya
       if (gameMode === "bot") {
         if (playerColor === "w") {
-          // Pemain di bawah: putih.png + nama player
-          playerFoto = { atas: IMG_HITAM, bawah: IMG_PUTIH };
-          playerNama = { atas: "bot", bawah: playerBotName };
+          namaAtas = "bot";
+          namaBawah = playerBotName;
         } else {
-          // Pemain di atas: hitam.png + nama player
-          playerFoto = { atas: IMG_HITAM, bawah: IMG_PUTIH };
-          playerNama = { atas: playerBotName, bawah: "bot" };
-          // Tapi papan catur diorientasikan ke hitam, jadi pemain hitam di bawah
-          // Untuk tetap konsisten, swap jika ingin hitam di bawah
-          playerFoto = { atas: IMG_PUTIH, bawah: IMG_HITAM };
-          playerNama = { atas: "bot", bawah: playerBotName };
+          namaAtas = playerBotName;
+          namaBawah = "bot";
         }
       } else {
-        playerFoto = { atas: IMG_HITAM, bawah: IMG_PUTIH };
-        playerNama = { atas: player2Name, bawah: player1Name };
+        namaAtas = player2Name;
+        namaBawah = player1Name;
       }
-      document.getElementById("imgAtas").src = playerFoto.atas;
-      document.getElementById("imgBawah").src = playerFoto.bawah;
-      document.getElementById("namaAtas").textContent = playerNama.atas;
-      document.getElementById("namaBawah").textContent = playerNama.bawah;
+      document.getElementById("imgAtas").src = IMG_HITAM;
+      document.getElementById("imgBawah").src = IMG_PUTIH;
+      document.getElementById("namaAtas").textContent = namaAtas;
+      document.getElementById("namaBawah").textContent = namaBawah;
     }
 
     function startGame() {
@@ -278,11 +271,11 @@
 
     function updateStatus() {
       let status = '';
-      if (game.in_check()) status = (game.turn() === 'w' ? "Raja Putih Skak! ":"Raja Hitam Skak! ");
-      if (game.in_checkmate()) status += "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
+      if (game.in_check()) status = (game.turn() === 'w' ? "raja putih skak! ":"raja negro skak! ");
+      if (game.in_checkmate()) status += "Checkmate! " + (game.turn() === "w" ? "negro" : "Putih") + " menang!";
       else if (game.in_draw()) status += "Seri.";
       else {
-        status += (game.turn() === "w" ? "Giliran Putih" : "Giliran Hitam");
+        status += (game.turn() === "w" ? "giliran putih" : "Giliran negro");
         if (gameMode === "pvp") status += ". " + (game.turn() === "w" ? player1Name : player2Name) + " jalan";
         if (gameMode === "bot") status += ". " + (game.turn() === playerColor ? playerBotName : "Bot") + " jalan";
       }
@@ -297,7 +290,7 @@
       document.getElementById("resultText").textContent = message;
       document.getElementById("result").classList.remove("hidden");
 
-      // --- Kirim ke Discord Webhook ---
+      // webhooknnya ---
       let winner = "";
       if (game.in_checkmate()) {
         winner = game.turn() === "w" ? "Hitam" : "Putih";
@@ -342,7 +335,6 @@
       document.getElementById("inputPvP").classList.add("hidden");
     };
 
-    // Hide input on load
     document.getElementById("inputBot").classList.add("hidden");
     document.getElementById("inputPvP").classList.add("hidden");
   </script>
