@@ -2,26 +2,27 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>intinya ini catur</title>
+  <title>Catur Web Unicode (Desain Tengah + Foto + Nama)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; margin:0;}
     h2 { margin-bottom: 6px; margin-top:20px; }
     #chooseMode, #inputNames, #game, #result { margin-top: 15px;}
     #status { margin: 18px auto 10px auto; font-weight: bold; min-height: 32px; font-size: 1.2em;}
-    #players { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 8px;}
-    .player-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px;}
-    .player-img { width: 54px; height: 54px; object-fit: cover; border: 3px solid #222; border-radius: 6px; background: #fff;}
-    .player-name { font-weight: bold; font-size: 1.1em; text-align: left;}
-    #board-wrapper { display:inline-block; margin:10px auto 0 auto; border:4px solid #888; border-radius:6px; background:#eee; }
-    #board { display: grid; grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(8, 40px); }
-    .square { width: 40px; height: 40px; box-sizing: border-box; position: relative; cursor: pointer; }
+    #main-area { display: flex; flex-direction: column; align-items: center; }
+    #side-by-side { display: flex; flex-direction: column; align-items: center; gap:24px; }
+    .player-row { display: flex; align-items: center; gap: 14px; margin-bottom: 0;}
+    .player-img { width: 60px; height: 60px; object-fit: cover; border: 3px solid #222; border-radius: 8px; background: #fff;}
+    .player-name { font-weight: bold; font-size: 1.15em; text-align: left;}
+    #board-wrapper { display:inline-block; margin:0 auto; border:4px solid #888; border-radius:6px; background:#eee; }
+    #board { display: grid; grid-template-columns: repeat(8, 44px); grid-template-rows: repeat(8, 44px); }
+    .square { width: 44px; height: 44px; box-sizing: border-box; position: relative; cursor: pointer; }
     .square.dark { background: #c59a6c; }
     .square.light { background: #f2d1b3; }
     .square.selected { outline: 3px solid #2a7b1f; }
     .square.hint { border: 3px solid #2a7b1f; }
     .square.check { border: 3px solid #d40000; }
-    .piece { width: 36px; height: 36px; line-height: 40px; font-size: 28px; user-select: none; pointer-events: none; }
+    .piece { width: 40px; height: 40px; line-height: 44px; font-size: 30px; user-select: none; pointer-events: none; }
     #restartBtn { margin: 18px 0 0 0; font-size: 1em; }
     .hidden { display: none;}
     #footer { margin-top: 40px; font-size: 12px; color: #777;}
@@ -31,17 +32,19 @@
       .piece { font-size: 21px; width:28px; height:28px;}
       #board-wrapper { border-width:2.5px; }
       .player-img { width: 40px; height: 40px; }
+      #main-area { gap:12px; }
+      #side-by-side { gap: 16px; }
     }
   </style>
 </head>
 <body>
-  <h2>Catur Web Unicode (Mode PvP/Bot + Foto Pemain)</h2>
-  <!-- modenya -->
+  <h2>Catur Web Unicode (Mode PvP/Bot + Foto + Nama)</h2>
+  <!-- Pilih Mode -->
   <div id="chooseMode">
     <button id="modeBot">Player vs Bot</button>
     <button id="modeP2">Player vs Player</button>
   </div>
-  <!-- nama lu pada -->
+  <!-- Input Nama -->
   <div id="inputNames" class="hidden">
     <div id="inputBot" class="hidden">
       <input type="text" id="playerBotName" placeholder="Nama Anda"/>
@@ -60,28 +63,39 @@
   </div>
   <div id="game" class="hidden">
     <div id="status"></div>
-    <div id="players"></div>
-    <div id="board-wrapper"><div id="board"></div></div>
+    <div id="main-area">
+      <div id="side-by-side">
+        <div class="player-row" id="rowPutih">
+          <img class="player-img" id="imgPutih" src="img/putih.png" alt="Putih">
+          <span class="player-name" id="namaPutih">Putih</span>
+        </div>
+        <div id="board-wrapper"><div id="board"></div></div>
+        <div class="player-row" id="rowHitam">
+          <img class="player-img" id="imgHitam" src="img/hitam.png" alt="Hitam">
+          <span class="player-name" id="namaHitam">Hitam</span>
+        </div>
+      </div>
+    </div>
+    <div id="result" class="hidden">
+      <p id="resultText"></p>
+    </div>
     <button id="restartBtn">Ulang Permainan</button>
-  </div>
-  <div id="result" class="hidden">
-    <p id="resultText"></p>
   </div>
   <div id="footer">&copy; catur unicode NABLOM7</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
   <script>
-    // --- webhok jangan di raid ya ajg males buat google shett ---
+    // --- MASUKKAN LINK WEBHOOK DISCORD KAMU DI SINI ---
     const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7";
-    // bidaknya
+    // Bidak Unicode
     const PIECE_UNICODE = {
       w: { k:'♔', q:'♕', r:'♖', b:'♗', n:'♘', p:'♙' },
       b: { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟︎' }
     };
-    // poto nya ini 
-    const IMG_PUTIH = "aset/putih.png";
-    const IMG_HITAM = "aset/hitam.png";
-    const IMG_BOT   = "aset/bot.png"; // 
+    // Path gambar (ganti sesuai penamaan gambar kamu di repo/aset!)
+    const IMG_PUTIH = "img/putih.png";
+    const IMG_HITAM = "img/hitam.png";
+    const IMG_BOT   = "img/bot.png"; // bisa pakai putih/hitam.png juga kalau bot sama
 
     let game = new Chess();
     let selected = null;
@@ -93,7 +107,7 @@
     let playerFoto = {}; // {putih:?, hitam:?}
     let playerNama = {}; // {putih:?, hitam:?}
 
-    // ini modenya
+    // Mode game
     document.getElementById("modeBot").onclick = function() {
       gameMode = "bot";
       document.getElementById("chooseMode").classList.add("hidden");
@@ -139,6 +153,11 @@
         playerFoto = { putih: IMG_PUTIH, hitam: IMG_HITAM };
         playerNama = { putih: player1Name, hitam: player2Name };
       }
+      // Update foto & nama di UI
+      document.getElementById("imgPutih").src = playerFoto.putih;
+      document.getElementById("imgHitam").src = playerFoto.hitam;
+      document.getElementById("namaPutih").textContent = playerNama.putih;
+      document.getElementById("namaHitam").textContent = playerNama.hitam;
     }
 
     function startGame() {
@@ -147,42 +166,10 @@
       startTime = new Date();
       document.getElementById("result").classList.add("hidden");
       document.getElementById("game").classList.remove("hidden");
-      renderPlayers();
+      setFotoNama();
       renderBoard();
       updateStatus();
       if (gameMode === "bot" && playerColor === "b") setTimeout(botMove, 500);
-    }
-
-    function renderPlayers() {
-      let playersEl = document.getElementById('players');
-      playersEl.innerHTML = '';
-      // Atas (Putih)
-      let rowPutih = document.createElement('div');
-      rowPutih.className = 'player-row';
-      let imgPutih = document.createElement('img');
-      imgPutih.className = 'player-img';
-      imgPutih.src = playerFoto.putih;
-      imgPutih.alt = "Putih";
-      let namaPutih = document.createElement('span');
-      namaPutih.className = 'player-name';
-      namaPutih.textContent = playerNama.putih;
-      rowPutih.appendChild(imgPutih);
-      rowPutih.appendChild(namaPutih);
-      playersEl.appendChild(rowPutih);
-
-      // Bawah (Hitam)
-      let rowHitam = document.createElement('div');
-      rowHitam.className = 'player-row';
-      let imgHitam = document.createElement('img');
-      imgHitam.className = 'player-img';
-      imgHitam.src = playerFoto.hitam;
-      imgHitam.alt = "Hitam";
-      let namaHitam = document.createElement('span');
-      namaHitam.className = 'player-name';
-      namaHitam.textContent = playerNama.hitam;
-      rowHitam.appendChild(imgHitam);
-      rowHitam.appendChild(namaHitam);
-      playersEl.appendChild(rowHitam);
     }
 
     function renderBoard() {
@@ -197,7 +184,6 @@
         for (let idx = 0; idx < row.length && file < 8; idx++) {
           let ch = row[idx];
           if (ch >= '1' && ch <= '8') {
-            // kosongin kotak nya dawg
             for (let k = 0; k < Number(ch); k++) {
               let sqName = String.fromCharCode(97 + file) + (8 - r);
               let color = (r + file) % 2 ? 'dark' : 'light';
@@ -211,7 +197,6 @@
               file++;
             }
           } else {
-            // liat ada apa itu
             let sqName = String.fromCharCode(97 + file) + (8 - r);
             let color = (r + file) % 2 ? 'dark' : 'light';
             let square = document.createElement('div');
@@ -234,7 +219,6 @@
       }
     }
 
-    // squer raja lu skat
     function getCheckSquare() {
       if (!game.in_check()) return null;
       let turn = game.turn();
@@ -253,7 +237,6 @@
     }
 
     function squareClick(square) {
-      // pilih bidak nya ya jangan manja
       let piece = game.get(square);
       if (!selected) {
         if (piece && piece.color === game.turn()) {
@@ -261,10 +244,8 @@
           legalSquares = game.moves({ square: square, verbose: true }).map(m => m.to);
         }
       }
-      // legal move nya ini biar realistis
       else if (legalSquares.includes(square)) {
         let moveObj = { from: selected, to: square };
-        // bidak lu mau jadi apa?
         let isPromo = game.get(selected) && game.get(selected).type === 'p' &&
           ((game.get(selected).color === 'w' && selected[1] === '7' && square[1] === '8') ||
            (game.get(selected).color === 'b' && selected[1] === '2' && square[1] === '1'));
@@ -278,7 +259,6 @@
           if (game.game_over()) endGame();
         }
       }
-      // resset pilih
       else {
         selected = null; legalSquares = [];
       }
@@ -318,7 +298,7 @@
       document.getElementById("resultText").textContent = message;
       document.getElementById("result").classList.remove("hidden");
 
-      // --- anjay discord nya ini ---
+      // --- Kirim ke Discord Webhook ---
       let winner = "";
       if (game.in_checkmate()) {
         winner = game.turn() === "w" ? "Hitam" : "Putih";
@@ -363,7 +343,7 @@
       document.getElementById("inputPvP").classList.add("hidden");
     };
 
-    // hide input ini
+    // Hide input on load
     document.getElementById("inputBot").classList.add("hidden");
     document.getElementById("inputPvP").classList.add("hidden");
   </script>
