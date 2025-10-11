@@ -241,7 +241,7 @@
         let isPromo = game.get(selected) && game.get(selected).type === 'p' &&
           ((game.get(selected).color === 'w' && selected[1] === '7' && square[1] === '8') ||
            (game.get(selected).color === 'b' && selected[1] === '2' && square[1] === '1'));
-        if (isPromo) moveObj.promotion = prompt('Promosi ke (q,r,b,n):','q') || 'q';
+        if (isPromo) moveObj.promotion = prompt('Promosi ke(n itu kuda) (q,r,b,n):','q') || 'q';
         let move = game.move(moveObj);
         if (move) {
           selected = null; legalSquares = [];
@@ -271,11 +271,11 @@
 
     function updateStatus() {
       let status = '';
-      if (game.in_check()) status = (game.turn() === 'w' ? "raja putih skak! ":"raja negro skak! ");
-      if (game.in_checkmate()) status += "Checkmate! " + (game.turn() === "w" ? "negro" : "Putih") + " menang!";
+      if (game.in_check()) status = (game.turn() === 'w' ? "raja putih skak! ":"raja hitam skak! ");
+      if (game.in_checkmate()) status += "Checkmate! " + (game.turn() === "w" ? "hitam" : "Putih") + " menang!";
       else if (game.in_draw()) status += "Seri.";
       else {
-        status += (game.turn() === "w" ? "giliran putih" : "Giliran negro");
+        status += (game.turn() === "w" ? "giliran putih" : "Giliran hitam");
         if (gameMode === "pvp") status += ". " + (game.turn() === "w" ? player1Name : player2Name) + " jalan";
         if (gameMode === "bot") status += ". " + (game.turn() === playerColor ? playerBotName : "Bot") + " jalan";
       }
