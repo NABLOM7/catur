@@ -1,45 +1,50 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Catur Web Custom Bidak</title>
-  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
+  <meta charset="UTF-8">
+  <title>intinya ini catur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; padding: 18px;}
-    h2 { margin-bottom: 12px; }
-    #welcome, #chooseMode, #inputNames, #game, #result { margin-top: 15px; }
-    #board { margin: 12px auto; }
-    button, input, select { font-size: 16px; padding: 8px 14px; border-radius: 5px; border: 1px solid #888; }
-    button { cursor: pointer; background-color: #eaeaea; }
-    button:hover { background-color: #cfcfcf; }
-    input { width: 200px; }
-    .hidden { display: none; }
-    #status { margin-top: 12px; font-weight: bold; min-height: 40px;}
-    #footer { margin-top: 40px; font-size: 12px; color: #777; }
-    /* Modal promosi pawn */
-    #promoModal.hidden { display:none; }
-    #promoModal { position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;
-      display:flex;align-items:center;justify-content:center;z-index:999; }
-    #promoModal .modal-box { background:#fff;padding:22px 28px;border-radius:12px;
-      box-shadow:0 4px 32px #0006;text-align:center; }
-    #promoModal .promoBtn { font-size:17px;margin:7px 5px;border-radius:8px;padding:8px 22px; }
+    body { font-family: Arial, sans-serif; text-align: center; background: #fafafa; margin:0;}
+    h2 { margin-bottom: 6px; margin-top:20px; }
+    #chooseMode, #inputNames, #game, #result { margin-top: 15px;}
+    #status { margin: 18px auto 10px auto; font-weight: bold; min-height: 32px; font-size: 1.2em;}
+    #players { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 8px;}
+    .player-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px;}
+    .player-img { width: 54px; height: 54px; object-fit: cover; border: 3px solid #222; border-radius: 6px; background: #fff;}
+    .player-name { font-weight: bold; font-size: 1.1em; text-align: left;}
+    #board-wrapper { display:inline-block; margin:10px auto 0 auto; border:4px solid #888; border-radius:6px; background:#eee; }
+    #board { display: grid; grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(8, 40px); }
+    .square { width: 40px; height: 40px; box-sizing: border-box; position: relative; cursor: pointer; }
+    .square.dark { background: #c59a6c; }
+    .square.light { background: #f2d1b3; }
+    .square.selected { outline: 3px solid #2a7b1f; }
+    .square.hint { border: 3px solid #2a7b1f; }
+    .square.check { border: 3px solid #d40000; }
+    .piece { width: 36px; height: 36px; line-height: 40px; font-size: 28px; user-select: none; pointer-events: none; }
+    #restartBtn { margin: 18px 0 0 0; font-size: 1em; }
+    .hidden { display: none;}
+    #footer { margin-top: 40px; font-size: 12px; color: #777;}
+    @media (max-width: 520px) {
+      #board { grid-template-columns: repeat(8, 32px); grid-template-rows: repeat(8, 32px); }
+      .square { width: 32px; height: 32px; }
+      .piece { font-size: 21px; width:28px; height:28px;}
+      #board-wrapper { border-width:2.5px; }
+      .player-img { width: 40px; height: 40px; }
+    }
   </style>
 </head>
 <body>
-  <h2>catur web</h2>
-  <div id="welcome"><p>Selamat datang di catur web</p></div>
-
-  <!-- Pilih Mode -->
+  <h2>Catur Web Unicode (Mode PvP/Bot + Foto Pemain)</h2>
+  <!-- modenya -->
   <div id="chooseMode">
     <button id="modeBot">Player vs Bot</button>
     <button id="modeP2">Player vs Player</button>
   </div>
-
-  <!-- Input Nama -->
+  <!-- nama lu pada -->
   <div id="inputNames" class="hidden">
     <div id="inputBot" class="hidden">
-      <input type="text" id="playerBotName" placeholder="Nama Anda" />
+      <input type="text" id="playerBotName" placeholder="Nama Anda"/>
       <label>Pilih warna:</label>
       <select id="colorSelectBot">
         <option value="w">Putih</option>
@@ -48,276 +53,319 @@
       <button id="botNext">Mulai</button>
     </div>
     <div id="inputPvP" class="hidden">
-      <input type="text" id="player1Name" placeholder="Nama Pemain 1 (Putih)" /><br><br>
-      <input type="text" id="player2Name" placeholder="Nama Pemain 2 (Hitam)" /><br><br>
+      <input type="text" id="player1Name" placeholder="Nama Pemain 1 (Putih)"/><br><br>
+      <input type="text" id="player2Name" placeholder="Nama Pemain 2 (Hitam)"/><br><br>
       <button id="pvpNext">Mulai</button>
     </div>
   </div>
-
-  <!-- Modal Promosi Bidak -->
-  <div id="promoModal" class="hidden">
-    <div class="modal-box">
-      <h3>Pilih promosi bidak:</h3>
-      <button class="promoBtn" data-piece="q">Ratu (Queen)</button>
-      <button class="promoBtn" data-piece="r">Benteng (Rook)</button>
-      <button class="promoBtn" data-piece="b">Gajah (Bishop)</button>
-      <button class="promoBtn" data-piece="n">Kuda (Knight)</button>
-    </div>
-  </div>
-
-  <!-- Game -->
   <div id="game" class="hidden">
-    <div id="board" style="width: 320px;"></div>
     <div id="status"></div>
-    <button id="restartBtn">Ulang</button>
+    <div id="players"></div>
+    <div id="board-wrapper"><div id="board"></div></div>
+    <button id="restartBtn">Ulang Permainan</button>
   </div>
-
-  <!-- Result -->
   <div id="result" class="hidden">
     <p id="resultText"></p>
   </div>
+  <div id="footer">&copy; catur unicode NABLOM7</div>
 
-  <div id="footer">&copy; catur simple by NABLOM</div>
-
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
-  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
   <script>
+    // --- webhok jangan di raid ya ajg males buat google shett ---
+    const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7";
+    // bidaknya
+    const PIECE_UNICODE = {
+      w: { k:'♔', q:'♕', r:'♖', b:'♗', n:'♘', p:'♙' },
+      b: { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟︎' }
+    };
+    // poto nya ini 
+    const IMG_PUTIH = "aset/putih.png";
+    const IMG_HITAM = "aset/hitam.png";
+    const IMG_BOT   = "aset/bot.png"; // 
+
     let game = new Chess();
-    let board = null;
+    let selected = null;
+    let legalSquares = [];
     let gameMode = "";
     let playerColor = "w";
-    let player1Name = "";
-    let player2Name = "";
-    let playerBotName = "";
+    let player1Name = "", player2Name = "", playerBotName = "";
     let startTime = null;
-    let pendingPromotion = null; // Untuk promosi pawn
-    let selectedSquare = null;   // Untuk klik bidak, klik tujuan
+    let playerFoto = {}; // {putih:?, hitam:?}
+    let playerNama = {}; // {putih:?, hitam:?}
 
-    const webhookURL = "https://canary.discord.com/api/webhooks/1425071682007072949/J4IWih3OzQrW4vUTe80TvDPC7HRZhItpf3cZ12FLlBMFhVZfh0E3Q7ueJqNf9IsTHZe7";
-
-    // Step 1: Pilih mode
-    $("#modeBot").click(function() {
+    // ini modenya
+    document.getElementById("modeBot").onclick = function() {
       gameMode = "bot";
-      $("#chooseMode").hide();
-      $("#inputNames").show();
-      $("#inputBot").show();
-    });
-    $("#modeP2").click(function() {
+      document.getElementById("chooseMode").classList.add("hidden");
+      document.getElementById("inputNames").classList.remove("hidden");
+      document.getElementById("inputBot").classList.remove("hidden");
+    };
+    document.getElementById("modeP2").onclick = function() {
       gameMode = "pvp";
-      $("#chooseMode").hide();
-      $("#inputNames").show();
-      $("#inputPvP").show();
-    });
-
-    // Step 2a: Input nama & warna (Bot mode)
-    $("#botNext").click(function() {
-      playerBotName = $("#playerBotName").val().trim();
-      playerColor = $("#colorSelectBot").val();
+      document.getElementById("chooseMode").classList.add("hidden");
+      document.getElementById("inputNames").classList.remove("hidden");
+      document.getElementById("inputPvP").classList.remove("hidden");
+    };
+    document.getElementById("botNext").onclick = function() {
+      playerBotName = document.getElementById("playerBotName").value.trim();
+      playerColor = document.getElementById("colorSelectBot").value;
       if (!playerBotName) { alert("Nama wajib diisi."); return; }
-      $("#inputBot").hide();
-      $("#inputNames").hide();
+      document.getElementById("inputBot").classList.add("hidden");
+      document.getElementById("inputNames").classList.add("hidden");
+      setFotoNama();
       startGame();
-    });
-
-    // Step 2b: Input nama PvP
-    $("#pvpNext").click(function() {
-      player1Name = $("#player1Name").val().trim();
-      player2Name = $("#player2Name").val().trim();
+    };
+    document.getElementById("pvpNext").onclick = function() {
+      player1Name = document.getElementById("player1Name").value.trim();
+      player2Name = document.getElementById("player2Name").value.trim();
       if (!player1Name || !player2Name) { alert("Nama semua pemain wajib diisi."); return; }
-      $("#inputPvP").hide();
-      $("#inputNames").hide();
-      playerColor = "w"; // player 1 selalu putih, player 2 selalu hitam
+      document.getElementById("inputPvP").classList.add("hidden");
+      document.getElementById("inputNames").classList.add("hidden");
+      playerColor = "w";
+      setFotoNama();
       startGame();
-    });
+    };
 
-    // Step 3: Mulai game
+    function setFotoNama() {
+      if (gameMode === "bot") {
+        if (playerColor === "w") {
+          playerFoto = { putih: IMG_PUTIH, hitam: IMG_BOT };
+          playerNama = { putih: playerBotName, hitam: "bot" };
+        } else {
+          playerFoto = { putih: IMG_BOT, hitam: IMG_HITAM };
+          playerNama = { putih: "bot", hitam: playerBotName };
+        }
+      } else {
+        playerFoto = { putih: IMG_PUTIH, hitam: IMG_HITAM };
+        playerNama = { putih: player1Name, hitam: player2Name };
+      }
+    }
+
     function startGame() {
       game.reset();
+      selected = null; legalSquares = [];
       startTime = new Date();
-      $("#result").hide();
-      $("#game").show();
+      document.getElementById("result").classList.add("hidden");
+      document.getElementById("game").classList.remove("hidden");
+      renderPlayers();
+      renderBoard();
+      updateStatus();
+      if (gameMode === "bot" && playerColor === "b") setTimeout(botMove, 500);
+    }
 
-      if (board) board.destroy();
-      board = Chessboard("board", {
-        draggable: false,
-        position: "start",
-        pieceTheme: "img/{piece}.png",
-        orientation: (gameMode === "bot" ? (playerColor === "w" ? "white" : "black") : "white"),
-      });
+    function renderPlayers() {
+      let playersEl = document.getElementById('players');
+      playersEl.innerHTML = '';
+      // Atas (Putih)
+      let rowPutih = document.createElement('div');
+      rowPutih.className = 'player-row';
+      let imgPutih = document.createElement('img');
+      imgPutih.className = 'player-img';
+      imgPutih.src = playerFoto.putih;
+      imgPutih.alt = "Putih";
+      let namaPutih = document.createElement('span');
+      namaPutih.className = 'player-name';
+      namaPutih.textContent = playerNama.putih;
+      rowPutih.appendChild(imgPutih);
+      rowPutih.appendChild(namaPutih);
+      playersEl.appendChild(rowPutih);
 
-      selectedSquare = null;
+      // Bawah (Hitam)
+      let rowHitam = document.createElement('div');
+      rowHitam.className = 'player-row';
+      let imgHitam = document.createElement('img');
+      imgHitam.className = 'player-img';
+      imgHitam.src = playerFoto.hitam;
+      imgHitam.alt = "Hitam";
+      let namaHitam = document.createElement('span');
+      namaHitam.className = 'player-name';
+      namaHitam.textContent = playerNama.hitam;
+      rowHitam.appendChild(imgHitam);
+      rowHitam.appendChild(namaHitam);
+      playersEl.appendChild(rowHitam);
+    }
 
-      // Event klik bidak & tujuan
-      $("#board").off("click").on("click", ".square", function() {
-        const square = $(this).attr("data-square");
-        if (!square) return;
-        // Jika belum pilih bidak, pilih bidak sendiri
-        if (!selectedSquare) {
-          const piece = game.get(square);
-          if (piece && piece.color === game.turn()) {
-            selectedSquare = square;
-          }
-        } else {
-          // Sudah pilih bidak, klik ke square tujuan
-          // Validasi langkah legal
-          let moves = game.moves({ square: selectedSquare, verbose: true });
-          let isLegal = moves.find(m => m.to === square);
-          if (!isLegal) {
-            selectedSquare = null;
-            return;
-          }
-          // Cek promosi
-          let moveObj = { from: selectedSquare, to: square };
-          let piece = game.get(selectedSquare);
-          let promotion = undefined;
-          if (piece && piece.type === "p" &&
-              ((piece.color === "w" && selectedSquare[1] === "7" && square[1] === "8") ||
-               (piece.color === "b" && selectedSquare[1] === "2" && square[1] === "1"))) {
-            // Show modal promosi
-            pendingPromotion = { from: selectedSquare, to: square };
-            $("#promoModal").removeClass("hidden");
-            return;
+    function renderBoard() {
+      const boardEl = document.getElementById('board');
+      boardEl.innerHTML = '';
+      let fen = game.fen().split(' ')[0];
+      let rows = fen.split('/');
+      let checkSquare = getCheckSquare();
+      for (let r = 0; r < 8; r++) {
+        let row = rows[r];
+        let file = 0;
+        for (let idx = 0; idx < row.length && file < 8; idx++) {
+          let ch = row[idx];
+          if (ch >= '1' && ch <= '8') {
+            // kosongin kotak nya dawg
+            for (let k = 0; k < Number(ch); k++) {
+              let sqName = String.fromCharCode(97 + file) + (8 - r);
+              let color = (r + file) % 2 ? 'dark' : 'light';
+              let squareEmpty = document.createElement('div');
+              squareEmpty.className = `square ${color}`;
+              squareEmpty.setAttribute('data-square', sqName);
+              if (legalSquares.includes(sqName)) squareEmpty.classList.add('hint');
+              if (sqName === checkSquare) squareEmpty.classList.add('check');
+              squareEmpty.onclick = () => squareClick(sqName);
+              boardEl.appendChild(squareEmpty);
+              file++;
+            }
           } else {
-            moveObj.promotion = "q"; // default queen untuk chess.js biar ga error
+            // liat ada apa itu
+            let sqName = String.fromCharCode(97 + file) + (8 - r);
+            let color = (r + file) % 2 ? 'dark' : 'light';
+            let square = document.createElement('div');
+            square.className = `square ${color}`;
+            square.setAttribute('data-square', sqName);
+            if (selected === sqName) square.classList.add('selected');
+            if (legalSquares.includes(sqName)) square.classList.add('hint');
+            if (sqName === checkSquare) square.classList.add('check');
+            let side = (ch === ch.toUpperCase()) ? 'w' : 'b';
+            let type = ch.toLowerCase();
+            let piece = document.createElement('div');
+            piece.className = 'piece';
+            piece.textContent = PIECE_UNICODE[side][type];
+            square.appendChild(piece);
+            square.onclick = () => squareClick(sqName);
+            boardEl.appendChild(square);
+            file++;
           }
-          let move = game.move(moveObj);
-          if (move === null) { selectedSquare = null; return; }
-          board.position(game.fen());
-          selectedSquare = null;
+        }
+      }
+    }
+
+    // squer raja lu skat
+    function getCheckSquare() {
+      if (!game.in_check()) return null;
+      let turn = game.turn();
+      let kingSquare = null;
+      let boardArr = game.board();
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          let piece = boardArr[r][c];
+          if (piece && piece.type === "k" && piece.color === turn) {
+            kingSquare = String.fromCharCode(97 + c) + (8 - r);
+            break;
+          }
+        }
+      }
+      return kingSquare;
+    }
+
+    function squareClick(square) {
+      // pilih bidak nya ya jangan manja
+      let piece = game.get(square);
+      if (!selected) {
+        if (piece && piece.color === game.turn()) {
+          selected = square;
+          legalSquares = game.moves({ square: square, verbose: true }).map(m => m.to);
+        }
+      }
+      // legal move nya ini biar realistis
+      else if (legalSquares.includes(square)) {
+        let moveObj = { from: selected, to: square };
+        // bidak lu mau jadi apa?
+        let isPromo = game.get(selected) && game.get(selected).type === 'p' &&
+          ((game.get(selected).color === 'w' && selected[1] === '7' && square[1] === '8') ||
+           (game.get(selected).color === 'b' && selected[1] === '2' && square[1] === '1'));
+        if (isPromo) moveObj.promotion = prompt('Promosi ke (q,r,b,n):','q') || 'q';
+        let move = game.move(moveObj);
+        if (move) {
+          selected = null; legalSquares = [];
+          renderBoard();
           updateStatus();
-          // Bot jalan jika perlu
           if (gameMode === "bot" && !game.game_over() && game.turn() !== playerColor) setTimeout(botMove, 450);
           if (game.game_over()) endGame();
         }
-      });
-
-      if (gameMode === "bot" && playerColor === "b") {
-        setTimeout(botMove, 400);
       }
-      updateStatus();
+      // resset pilih
+      else {
+        selected = null; legalSquares = [];
+      }
+      renderBoard();
     }
-
-    // Modal promosi handler
-    $(".promoBtn").click(function(){
-      let pieceType = $(this).data("piece");
-      if(pendingPromotion) {
-        let moveObj = {
-          from: pendingPromotion.from,
-          to: pendingPromotion.to,
-          promotion: pieceType
-        };
-        let move = game.move(moveObj);
-        if(move !== null){
-          board.position(game.fen());
-          updateStatus();
-          $("#promoModal").addClass("hidden");
-          pendingPromotion = null;
-          selectedSquare = null;
-          // Bot jalan jika perlu
-          if (gameMode === "bot" && !game.game_over() && game.turn() !== playerColor) {
-            setTimeout(botMove, 450);
-          }
-          if (game.game_over()) endGame();
-        } else {
-          alert("Promosi gagal!");
-          $("#promoModal").addClass("hidden");
-          pendingPromotion = null;
-          selectedSquare = null;
-        }
-      }
-    });
 
     function botMove() {
       let moves = game.moves({ verbose: true });
-      if (moves.length === 0) return;
+      if (!moves.length) return;
       let promoMoves = moves.filter(m => m.flags.includes("p"));
-      let move;
-      if (promoMoves.length > 0) {
-        move = promoMoves.find(m => m.promotion === "q") || promoMoves[0];
-        game.move({ from: move.from, to: move.to, promotion: move.promotion });
-      } else {
-        move = moves[Math.floor(Math.random() * moves.length)];
-        game.move({ from: move.from, to: move.to, promotion: move.promotion });
-      }
-      board.position(game.fen());
+      let move = promoMoves.length ? promoMoves.find(m => m.promotion === "q") || promoMoves[0] : moves[Math.floor(Math.random()*moves.length)];
+      game.move({ from: move.from, to: move.to, promotion: move.promotion });
+      selected = null; legalSquares = [];
+      renderBoard();
       updateStatus();
       if (game.game_over()) endGame();
     }
 
     function updateStatus() {
-      let status = "";
-      if (game.in_check()) {
-        status += (game.turn() === "w" ? "Raja Putih Skak! " : "Raja Hitam Skak! ");
-      }
-      if (game.in_checkmate()) {
-        status += "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
-      } else if (game.in_draw()) {
-        status += "Seri.";
-      } else {
+      let status = '';
+      if (game.in_check()) status = (game.turn() === 'w' ? "Raja Putih Skak! ":"Raja Hitam Skak! ");
+      if (game.in_checkmate()) status += "Checkmate! " + (game.turn() === "w" ? "Hitam" : "Putih") + " menang!";
+      else if (game.in_draw()) status += "Seri.";
+      else {
         status += (game.turn() === "w" ? "Giliran Putih" : "Giliran Hitam");
-        if (gameMode === "pvp") {
-          status += ". ";
-          status += (game.turn() === "w" ? player1Name : player2Name) + " jalan";
-        }
-        if (gameMode === "bot") {
-          status += ". ";
-          status += (game.turn() === playerColor ? playerBotName : "Bot") + " jalan";
-        }
+        if (gameMode === "pvp") status += ". " + (game.turn() === "w" ? player1Name : player2Name) + " jalan";
+        if (gameMode === "bot") status += ". " + (game.turn() === playerColor ? playerBotName : "Bot") + " jalan";
       }
-      $("#status").text(status);
+      document.getElementById('status').textContent = status;
     }
 
     function endGame() {
-      const endTime = new Date();
-      const duration = ((endTime - startTime) / 1000).toFixed(2);
-      let message = "";
+      let status = document.getElementById("status").textContent;
+      let endTime = new Date();
+      let duration = ((endTime - startTime) / 1000).toFixed(2);
+      let message = status + " (Durasi: " + duration + " detik)";
+      document.getElementById("resultText").textContent = message;
+      document.getElementById("result").classList.remove("hidden");
 
+      // --- anjay discord nya ini ---
+      let winner = "";
       if (game.in_checkmate()) {
-        const winner = game.turn() === "w" ? "Hitam" : "Putih";
+        winner = game.turn() === "w" ? "Hitam" : "Putih";
         if (gameMode === "bot") {
-          message = `Game selesai, pemenang: ${winner}. Nama: ${playerBotName}, durasi: ${duration} detik.`;
-          if (winner === (playerColor === "w" ? "Putih" : "Hitam")) {
-            fetch(webhookURL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                content: `${playerBotName} menang lawan bot sebagai ${winner} dalam waktu ${duration} detik!`,
-              }),
-            });
-          }
-        } else {
-          // PvP mode, kirim webhook ke discord
-          let pemenangNama = (winner === "Putih") ? player1Name : player2Name;
-          message = `Game selesai, pemenang: ${winner} (${pemenangNama}). P1: ${player1Name}, P2: ${player2Name}, durasi: ${duration} detik.`;
           fetch(webhookURL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              content: `Permainan PvP selesai! Pemenang: ${winner} (${pemenangNama}). Durasi: ${duration} detik. Pemain Putih: ${player1Name}, Pemain Hitam: ${player2Name}`
-            }),
+              content: `[BOT] Permainan selesai! Pemenang: ${winner}. Nama: ${playerBotName}. Durasi: ${duration} detik.`
+            })
+          });
+        } else {
+          let pemenangNama = winner === "Putih" ? player1Name : player2Name;
+          fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `[PvP] Permainan selesai! Pemenang: ${winner} (${pemenangNama}). Durasi: ${duration} detik.`
+            })
           });
         }
-      } else {
-        message = `Game selesai seri. Durasi: ${duration} detik.`;
+      } else if (game.in_draw()) {
+        fetch(webhookURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: `Permainan berakhir seri. Durasi: ${duration} detik.`
+          })
+        });
       }
-      $("#resultText").text(message);
-      $("#result").show();
     }
 
-    $("#restartBtn").click(function() {
-      $("#game").hide();
-      $("#result").hide();
-      $("#chooseMode").show();
+    document.getElementById('restartBtn').onclick = () => {
+      document.getElementById("game").classList.add("hidden");
+      document.getElementById("result").classList.add("hidden");
+      document.getElementById("chooseMode").classList.remove("hidden");
       player1Name = ""; player2Name = ""; playerBotName = "";
-      $("#player1Name").val(""); $("#player2Name").val(""); $("#playerBotName").val("");
-      $("#inputBot").hide(); $("#inputPvP").hide();
-    });
+      document.getElementById("player1Name").value = "";
+      document.getElementById("player2Name").value = "";
+      document.getElementById("playerBotName").value = "";
+      document.getElementById("inputBot").classList.add("hidden");
+      document.getElementById("inputPvP").classList.add("hidden");
+    };
 
-    $(document).ready(function() {
-      $("#inputBot").hide();
-      $("#inputPvP").hide();
-    });
+    // hide input ini
+    document.getElementById("inputBot").classList.add("hidden");
+    document.getElementById("inputPvP").classList.add("hidden");
   </script>
 </body>
 </html>
